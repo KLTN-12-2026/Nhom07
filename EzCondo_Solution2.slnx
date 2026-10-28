@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="EzCondo.BackEndServer/EzCondo.BackEndServer.csproj" />
+  <Project Path="EzCondo.Portal/EzCondo.Portal.csproj" />
+  <Project Path="EzCondo.ViewModel/EzCondo.ViewModel.csproj" />
+</Solution>
