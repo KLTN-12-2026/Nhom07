@@ -8,16 +8,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace EzCondo.BackEndServer.Data
 {
-	//public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityUserContext<IdentityUser, Guid>(options)
-	//{
-
-	public sealed class ApplicationDbContext : DbContext
+	public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityUserContext<User, Guid>(options)
 	{
-		public ApplicationDbContext(DbContextOptions options) : base(options)
-		{
-		}
-
-		public DbSet<IdentityUser> IdentityUsers => Set<IdentityUser>();
 		public DbSet<ApartmentContract> ApartmentContracts => Set<ApartmentContract>();
 		public DbSet<ApartmentResident> ApartmentResidents => Set<ApartmentResident>();
 		public DbSet<IncidentAffectedTenant> IncidentAffectedTenants => Set<IncidentAffectedTenant>();
@@ -67,6 +59,11 @@ namespace EzCondo.BackEndServer.Data
 		protected override void OnModelCreating(ModelBuilder b)
 		{
 			base.OnModelCreating(b);
+
+			b.Entity<User>().ToTable("user", "identity");
+			b.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims", "identity");
+			b.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins", "identity");
+			b.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens", "identity");
 
 			b.HasSequence<long>(
 				"payos_order_code_seq",

@@ -42,7 +42,7 @@ var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 option.UseNpgsql(dataSource));
 
-//builder.Services.AddScoped<DbInitializer>();
+builder.Services.AddScoped<DbInitializer>();
 
 
 builder.Services.AddControllers();
@@ -52,6 +52,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+await using (var scope = app.Services.CreateAsyncScope())
+{
+	var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
+	await initializer.InitializeAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -59,12 +65,6 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
-//using (var scope = app.Services.CreateScope())
-//{
-//	var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
-//	//await initializer.SeedAsync();
-//}
- 
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
