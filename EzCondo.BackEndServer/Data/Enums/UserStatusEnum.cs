@@ -8,11 +8,7 @@ namespace EzCondo.BackEndServer.Data.Enums
 		Active,
 		[PgName("locked")]
 		Locked,
-		[PgName("removed")]
-		Removed,
-		[PgName("pending")]
-		Pending,
-		[PgName("invited")]
-		Invited
+		[PgName("inviting")]
+		Inviting
 	}
 }

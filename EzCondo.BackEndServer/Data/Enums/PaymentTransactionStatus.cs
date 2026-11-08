@@ -6,14 +6,9 @@ namespace EzCondo.BackEndServer.Data.Enums
 	{
 		[PgName("received")]
 		Received,
-
 		[PgName("verified")]
 		Verified,
-
 		[PgName("rejected")]
-		Rejected,
-
-		[PgName("refunded")]
-		Refunded
+		Rejected
 	}
 }

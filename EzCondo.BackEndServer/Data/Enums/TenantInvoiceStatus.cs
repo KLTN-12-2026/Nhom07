@@ -6,20 +6,17 @@ namespace EzCondo.BackEndServer.Data.Enums
 	{
 		[PgName("draft")]
 		Draft,
-
-		[PgName("issued")]
-		Issued,
-		
+		[PgName("pending_approval")]
+		Pending_approval,
+		[PgName("approved")]
+		Approved,
+		[PgName("rejected")]
+		Rejected,
+		[PgName("published")]
+		Published,
 		[PgName("paid")]
 		Paid,
-
-		[PgName("overdue")]
-		Overdue,
-
-		[PgName("cancelled")]
-		Cancelled,
-
-		[PgName("void")]
-		Void
+		[PgName("unpaid")]
+		Unpaid
 	}
 }

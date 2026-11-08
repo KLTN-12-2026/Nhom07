@@ -8,15 +8,11 @@ namespace EzCondo.BackEndServer.Data.Enums
 		Draft,
 		[PgName("pending_approval")]
 		Pending_approval,
-		[PgName("processing")]
-		Processing,
-		[PgName("completed")]
-		Completed,
 		[PgName("approved")]
 		Approved,
 		[PgName("rejected")]
 		Rejected,
-		[PgName("issued")]
-		Issued
+		[PgName("published")]
+		Published
 	}
 }

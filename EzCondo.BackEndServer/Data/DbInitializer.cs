@@ -118,7 +118,7 @@ namespace EzCondo.BackEndServer.Data
 					continue;
 				}
 
-				_context.TenantPermissions.Add(new TenantPermission
+				_context.TenantPermissions.Add(new Permission
 				{
 					Code = seed.Code,
 					Description = seed.Description
@@ -181,7 +181,7 @@ namespace EzCondo.BackEndServer.Data
 					continue;
 				}
 
-				var role = new TenantRole
+				var role = new Role
 				{
 					Role = Guid.NewGuid(),
 					TenantId = tenantId,
@@ -196,7 +196,7 @@ namespace EzCondo.BackEndServer.Data
 
 				foreach(var permissionCode in roleSeed.PermissionCodes)
 				{
-					_context.TenantRolePermissions.Add(new TenantRolePermission
+					_context.TenantRolePermissions.Add(new RolePermission
 					{
 						TenantId = tenantId,
 						RoleId = role.Role,
