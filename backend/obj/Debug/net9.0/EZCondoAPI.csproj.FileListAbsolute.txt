@@ -156,3 +156,4 @@ E:\chungcu-main\backend\obj\Debug\net9.0\refint\EZCondoAPI.dll
 E:\chungcu-main\backend\obj\Debug\net9.0\EZCondoAPI.pdb
 E:\chungcu-main\backend\obj\Debug\net9.0\EZCondoAPI.genruntimeconfig.cache
 E:\chungcu-main\backend\obj\Debug\net9.0\ref\EZCondoAPI.dll
+E:\chungcu-main\backend\obj\Debug\net9.0\EZCondoAPI.sourcelink.json
