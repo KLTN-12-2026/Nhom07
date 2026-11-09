@@ -8,7 +8,7 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 	{
 		public Guid Id { get; set; }
 		public Decimal AreaM2 { get; set; }
-		public string ApartmentNo { get; set; }
+		public string ApartmentNo { get; set; } = null!;
 		public int Bedroom { get; set; }
 		public DateTimeOffset CreatedAt { get; set; }
 		public DateTimeOffset? UpdatedAt { get; set; }
@@ -18,8 +18,8 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public Guid TenantId { get; set; }
 		public Guid ApartmentRenter { get; set; }
 
-		public Tenant Tenant { get; set; }
-		public User Resident { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public User Resident { get; set; } = null!;
 
 		public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 		public ICollection<Contract> Contracts { get; set; } = new List<Contract>();

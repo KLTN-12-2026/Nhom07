@@ -22,21 +22,20 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 
 			b.Property(x => x.Status)
 				.HasColumnType("payment.payment_request_status")
-				.HasDefaultValueSql("'pending'::payment.payment_request_status")
 				.IsRequired();
 
 			b.Property(x => x.Amount)
 				.HasColumnType("numeric(18,2)")
 				.IsRequired();
 
-			b.Property(x => x.AmountRecived)
+			b.Property(x => x.AmountReceived)
 				.HasColumnType("numeric(18,2)")
 				.HasDefaultValue(0)
 				.IsRequired();
 
 			b.Property(x => x.Currency)
 				.HasColumnType("char(3)")
-				.HasDefaultValue("'VND'")
+				.HasDefaultValue("VND")
 				.IsRequired();
 
 			b.Property(x => x.CheckoutUrl)
@@ -54,7 +53,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 			b.Property(x => x.CancellationReason)
 				.HasColumnType("text");
 
-			b.Property(x => x.ExpiredAt)
+			b.Property(x => x.ExpiresAt)
 				.HasColumnType("timestamptz");
 
 			b.Property(x => x.CancelledAt)
@@ -69,25 +68,22 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 			{
 				x.HasCheckConstraint(
 					"ck_payment_requests_order_code",
-					"CHECK (order_code > 0)");
+					"(order_code > 0)");
 
 				x.HasCheckConstraint(
 					"ck_payment_requests_amount",
-					"CHECK (amount > 0)");
+					"(amount > 0)");
 
 				x.HasCheckConstraint(
 					"ck_payment_requests_amount_received",
-					"CHECK (amount_received > 0)");
+					"(amount_received >= 0)");
 
 				x.HasCheckConstraint(
 					"ck_payment_requests_integer_vnd",
-					"CHECK (amount = trunc(amount) AND amount_received = trunc(amount_received))");
+					"(amount = trunc(amount) AND amount_received = trunc(amount_received))");
 			});
 
 			b.HasIndex(x => new { x.ProviderAccountId, x.OrderCode })
-				.IsUnique();
-
-			b.HasIndex(x => new { x.ProviderAccountId, x.Id })
 				.IsUnique();
 
 			b.HasIndex(x => new { x.ProviderAccountId, x.ProviderPaymentLinkId })
@@ -95,13 +91,19 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 				.IsUnique()
 				.HasFilter("provider_payment_link_id IS NOT NULL");
 
-			b.HasIndex(x => new { x.ProviderAccountId, x.Status, x.ExpiredAt })
+			b.HasIndex(x => new { x.ProviderAccountId, x.Status, x.ExpiresAt })
 				.HasDatabaseName("ix_payment_requests_request_open")
-				.HasFilter("status IN ('peding', 'underpaid')");
+				.HasFilter("status IN ('pending', 'underpaid')");
 
 			b.HasIndex(x => new { x.ProviderAccountId, x.CreatedAt })
 				.HasDatabaseName("ix_payment_requests_created")
 				.IsDescending(false, true);
+
+			b.HasAlternateKey(x => new
+			{
+				x.ProviderAccountId,
+				x.Id
+			});
 		}
 	}
 }

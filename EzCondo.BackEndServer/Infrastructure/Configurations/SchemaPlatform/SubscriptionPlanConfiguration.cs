@@ -22,6 +22,10 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 			b.Property(x => x.Description)
 				.HasColumnType("text");
 
+			b.Property(x => x.BillingCycleMonths)
+				.HasColumnType("smallint")
+				.IsRequired();
+
 			b.Property(x => x.Price)
 				.HasPrecision(18, 2)
 				.IsRequired();
@@ -41,6 +45,10 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 					"CK_subscription_plans_price",
 					"price >= 0"
 					);
+
+				x.HasCheckConstraint(
+					"ck_subscription_plans_billing_cycle",
+					"billing_cycle_months IN (6, 12, 24)");
 			});
 
 			b.HasOne(x => x.AdminCreated)

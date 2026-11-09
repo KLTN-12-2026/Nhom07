@@ -53,18 +53,16 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany()
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.Staff)
 				.WithMany(x => x.Staff)
-				.HasForeignKey(x => new { x.TenantId, x.StaffId })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.StaffId)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.Manager)
 				.WithMany(x => x.ManagerCreated)
-				.HasForeignKey(x => new { x.TenantId, x.CreatedByManager })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.CreatedByManager)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.ToTable(x =>

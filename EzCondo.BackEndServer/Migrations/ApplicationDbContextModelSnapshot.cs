@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
@@ -22,38 +21,28 @@ namespace EzCondo.BackEndServer.Migrations
                 .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "identity", "user_status_enum", new[] { "active", "locked", "removed", "pending", "invited" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_invoice_status", new[] { "draft", "issued", "partially_paid", "paid", "overdue", "cancelled", "void" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_status_enum", new[] { "trial", "active", "past_due", "suspended", "cancelled", "expired" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "support_ticket_status", new[] { "open", "assigned", "in_progress", "resolved", "closed", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "system_incident_status", new[] { "reported", "investigating", "monitoring", "resolved", "closed" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "ai_role_enum", new[] { "user", "assistant", "system" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "apartment_status_enum", new[] { "available", "occupied", "reserved", "maintenance", "locked" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "billing_period_status", new[] { "draft", "collecting_readings", "calculated", "issued", "closed", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "document_status_enum", new[] { "draft", "published", "archived" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "document_type_enum", new[] { "regulation", "rule", "faq", "service_guide", "notice" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payment_order_status", new[] { "pending", "underpaid", "paid", "cancelled", "expired", "failed" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payment_transaction_status", new[] { "received", "verified", "rejected", "refunded" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_status_enum", new[] { "draft", "pending_approval", "processing", "completed", "approved", "rejected", "issued" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "resident_complaint_status", new[] { "assigned", "in_progress", "resolved", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "service_billing_type", new[] { "fixed", "metered", "one_time" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "tenant_contract_status", new[] { "active", "expired", "terminated" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "tenant_invoice_status", new[] { "draft", "issued", "paid", "overdue", "cancelled", "void" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "tenant_resident_status", new[] { "invited", "active", "suspended", "left" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "time_sheet_status", new[] { "draft", "comfirmed", "included" });
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "identity", "user_status_enum", new[] { "active", "locked", "inviting" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "payment_request_status", new[] { "pending", "underpaid", "paid", "cancelled", "expired", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "payment_transaction_status", new[] { "received", "verified", "rejected" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "payout_batch_status", new[] { "created", "submitting", "processing", "partially_succeeded", "succeeded", "failed", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "payout_item_status_enum", new[] { "created", "processing", "succeeded", "failed", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "processing_status_enum", new[] { "received", "processing", "succeeded", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "provider_owner_scope", new[] { "platform", "tenant" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_invoice_status", new[] { "issued", "partially_paid", "paid", "overdue", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_status_enum", new[] { "trial", "active", "past_due", "cancelled", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "closed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "security", "role_scope_enum", new[] { "platform", "tenant" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invitation_status_enum", new[] { "accepted", "sent", "revoked", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invoice_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_disbursement_item_status", new[] { "ready", "processing", "succeeded", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_disbursement_status", new[] { "ready", "issuing", "processing", "partially_succeeded", "succeeded", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_status_enum", new[] { "draft", "pending_approval", "approved", "rejected", "published" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "tenant_invoice_status", new[] { "draft", "pending_approval", "approved", "rejected", "published", "paid", "unpaid" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.HasSequence("payos_order_code_seq", "tenant")
-                .StartsAt(100000L);
-
-            modelBuilder.HasSequence("subscription_payment_order_code_seq", "platform")
-                .StartsAt(100000L);
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ApartmentContract", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -61,20 +50,33 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<Guid>("ApartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("apartment_id");
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("access_failed_count");
 
-                    b.Property<string>("ContractNo")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("contract_no");
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("avatar_url");
 
-                    b.Property<NpgsqlRange<DateOnly>?>("ContractPeriod")
-                        .IsRequired()
-                        .HasColumnType("daterange")
-                        .HasColumnName("contract_period");
+                    b.Property<string>("BankAccountNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("bank_account_number");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("bank_name");
+
+                    b.Property<string>("CitizenId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("citizen_id");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text")
+                        .HasColumnName("concurrency_stamp");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -82,306 +84,32 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<string>("DocumentUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("document_url");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<Guid>("ResidentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("resident_id");
-
-                    b.Property<DateOnly?>("SignedAt")
+                    b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date")
-                        .HasColumnName("signed_at");
-
-                    b.Property<TenantContractStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.tenant_contract_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'active'::tenant.tenant_contract_status");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractPeriod");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("ContractPeriod"), "gist");
-
-                    b.HasIndex("TenantId", "ApartmentId");
-
-                    b.HasIndex("TenantId", "ContractNo")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "ResidentId");
-
-                    b.ToTable("apartment_contracts", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_apartment_contracts_contract_period", "NOT isempty(contract_period)");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ApartmentResident", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("ApartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("apartment_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<NpgsqlRange<DateOnly>>("OccupancyPeriod")
-                        .HasColumnType("daterange")
-                        .HasColumnName("occupancy_period");
-
-                    b.Property<Guid>("ResidentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("resident_id");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ApartmentId");
-
-                    b.HasIndex("TenantId", "ResidentId");
-
-                    b.ToTable("apartment_residents", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("apartment_residents_period_check", "NOT isempty(occupancy_period)");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.IncidentAffectedTenant", b =>
-                {
-                    b.Property<Guid>("IncidentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("incident_id");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("NotifiedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("notified_at");
-
-                    b.HasKey("IncidentId", "TenantId");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("incident_affected_tenants", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.IncidentUpdate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("author_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("IncidentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("incident_id");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<SystemIncidentStatus>("Status")
-                        .HasColumnType("platform.system_incident_status")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("IncidentId");
-
-                    b.ToTable("incident_updates", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.KnowledgeDocument", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("content");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<NpgsqlRange<DateOnly>?>("EffectivePeriod")
-                        .HasColumnType("daterange")
-                        .HasColumnName("effective_period");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<DateTimeOffset?>("PublishedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("published_at");
-
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasColumnName("search_vector")
-                        .HasComputedColumnSql("to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, ''))", true);
-
-                    b.Property<string>("SourceUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("source_url");
-
-                    b.Property<DocumentStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.document_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::tenant.document_status_enum");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("title");
-
-                    b.Property<DocumentTypeEnum>("Type")
-                        .HasColumnType("tenant.document_type_enum")
-                        .HasColumnName("type");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EffectivePeriod");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("EffectivePeriod"), "gist");
-
-                    b.HasIndex("SearchVector");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "gin");
-
-                    b.HasIndex("TenantId", "CreatedBy");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "PublishedAt")
-                        .HasDatabaseName("knowledga_documents_idx")
-                        .HasFilter("\"status\" = 'published'::tenant.document_status_enum AND \"is_deleted\" = false");
-
-                    b.ToTable("knowledge_documents", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_knowledge_documents_published_at", "status <> 'published'::tenant.document_status_enum OR published_at IS NOT NULL");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformInvitation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset?>("AcceptedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("accepted_at");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnName("date_of_birth");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("citext")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("expires_at");
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("email_confirmed");
 
-                    b.Property<Guid>("InvitedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("invited_by");
+                    b.Property<string>("EmployeementContract")
+                        .HasColumnType("text")
+                        .HasColumnName("employeement_contract");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("full_name");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -389,18 +117,168 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
 
-                    b.Property<Guid>("PlatformRoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("platform_role_id");
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("lockout_enabled");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("revoked_at");
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lockout_end");
 
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("normalized_email");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("normalized_user_name");
+
+                    b.Property<string>("PasswordHash")
                         .HasColumnType("text")
-                        .HasColumnName("token_hash");
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("phone_number");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("phone_number_confirmed");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text")
+                        .HasColumnName("security_stamp");
+
+                    b.Property<UserStatusEnum>("Status")
+                        .HasColumnType("identity.user_status_enum")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("two_factor_enabled");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasDatabaseName("ux_users_normalized_email")
+                        .HasFilter("normalized_email IS NOT NULL");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_users_phone")
+                        .HasFilter("phone_number IS NOT NULL");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_users_tenant")
+                        .HasFilter("tenant_id IS NOT NULL");
+
+                    b.ToTable("users", "identity", t =>
+                        {
+                            t.HasCheckConstraint("CK_users_bank_name_and_bank_account_name", "(bank_name IS NULL AND bank_account_number IS NULL) OR (bank_name IS NOT NULL AND bank_account_number IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_users_email_or_phone_number_not_null", "email IS NOT NULL OR phone_number IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_users_is_deleted_and_deleted_at", "(is_deleted = false AND deleted_at IS NULL) OR (is_deleted = true AND deleted_at IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<decimal>("AmountReceived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("amount_received");
+
+                    b.Property<string>("CancelUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("cancel_url");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<string>("CheckoutUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("checkout_url");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(3)")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<long>("OrderCode")
+                        .HasColumnType("bigint")
+                        .HasColumnName("order_code");
+
+                    b.Property<Guid>("ProviderAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<string>("ProviderPaymentLinkId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_payment_link_id");
+
+                    b.Property<string>("QrCode")
+                        .HasColumnType("text")
+                        .HasColumnName("qr_code");
+
+                    b.Property<string>("ReturnUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("return_url");
+
+                    b.Property<PaymentRequestStatus>("Status")
+                        .HasColumnType("payment.payment_request_status")
+                        .HasColumnName("status");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -410,22 +288,466 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InvitedBy");
+                    b.HasIndex("ProviderAccountId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_payment_requests_created");
 
-                    b.HasIndex("PlatformRoleId");
-
-                    b.HasIndex("TokenHash")
+                    b.HasIndex("ProviderAccountId", "OrderCode")
                         .IsUnique();
 
-                    b.HasIndex("Email", "PlatformRoleId")
+                    b.HasIndex("ProviderAccountId", "ProviderPaymentLinkId")
                         .IsUnique()
-                        .HasDatabaseName("platform_invitations_idx")
-                        .HasFilter("accepted_at IS NULL AND revoked_at IS NULL");
+                        .HasDatabaseName("ux_payment_requests__provider_link")
+                        .HasFilter("provider_payment_link_id IS NOT NULL");
 
-                    b.ToTable("platform_invitations", "platform");
+                    b.HasIndex("ProviderAccountId", "Status", "ExpiresAt")
+                        .HasDatabaseName("ix_payment_requests_request_open")
+                        .HasFilter("status IN ('pending', 'underpaid')");
+
+                    b.ToTable("payment_requests", "payment", t =>
+                        {
+                            t.HasCheckConstraint("ck_payment_requests_amount", "(amount > 0)");
+
+                            t.HasCheckConstraint("ck_payment_requests_amount_received", "(amount_received >= 0)");
+
+                            t.HasCheckConstraint("ck_payment_requests_integer_vnd", "(amount = trunc(amount) AND amount_received = trunc(amount_received))");
+
+                            t.HasCheckConstraint("ck_payment_requests_order_code", "(order_code > 0)");
+                        });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformPaymentProviderConfig", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(3)")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("PayerMasked")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payer_masked")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<Guid?>("PaymentRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_request_id");
+
+                    b.Property<Guid>("ProviderAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<string>("ProviderPayload")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("provider_payload")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("ProviderReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_reference");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_transaction_id");
+
+                    b.Property<Guid?>("SourceWebhookEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_webhook_event_id");
+
+                    b.Property<PaymentTransactionStatus>("Status")
+                        .HasColumnType("payment.payment_transaction_status")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderAccountId", "Id")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "OccurredAt")
+                        .HasDatabaseName("ix_payment_transactions_unresolved")
+                        .HasFilter("payment_request_id IS NULL");
+
+                    b.HasIndex("ProviderAccountId", "ProviderTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "SourceWebhookEventId");
+
+                    b.HasIndex("ProviderAccountId", "PaymentRequestId", "OccurredAt")
+                        .HasDatabaseName("ix_payment_transactions_request");
+
+                    b.ToTable("payment_transactions", "payment", t =>
+                        {
+                            t.HasCheckConstraint("ck_payment_transaction_amount", "(amount > 0)");
+
+                            t.HasCheckConstraint("ck_payment_transaction_verified", "status <> 'verified' OR payment_request_id IS NOT NULL");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentWebhookEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("EventKey")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("event_key");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_attempt_at");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<long?>("OrderCode")
+                        .HasColumnType("bigint")
+                        .HasColumnName("order_code");
+
+                    b.Property<Guid?>("PaymentRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_request_id");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("processed_at");
+
+                    b.Property<int>("ProcessingAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("processing_attempts");
+
+                    b.Property<string>("ProcessingError")
+                        .HasColumnType("text")
+                        .HasColumnName("processing_error");
+
+                    b.Property<ProcessingStatusEnum>("ProcessingStatus")
+                        .HasColumnType("payment.processing_status_enum")
+                        .HasColumnName("processing_status");
+
+                    b.Property<Guid>("ProviderAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<string>("ProviderPaymentLinkId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_payment_link_id");
+
+                    b.Property<string>("ProviderReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_reference");
+
+                    b.Property<string>("RawPayload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("raw_payload");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("received_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("SignatureValid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("signature_valid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NextAttemptAt", "ReceivedAt")
+                        .HasDatabaseName("ix_webhook_events_pending")
+                        .HasFilter("signature_valid = true AND processing_status IN ('received', 'failed') AND processed_at IS NULL");
+
+                    b.HasIndex("ProviderAccountId", "EventKey")
+                        .IsUnique()
+                        .HasFilter("event_key IS NOT NULL");
+
+                    b.HasIndex("ProviderAccountId", "Id")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "OrderCode")
+                        .HasDatabaseName("ix_webhook_events_order_code");
+
+                    b.HasIndex("ProviderAccountId", "PaymentRequestId");
+
+                    b.HasIndex("ProviderAccountId", "ProviderPaymentLinkId")
+                        .HasDatabaseName("ix_webhook_events_provider_link")
+                        .HasFilter("provider_payment_link_id IS NOT NULL");
+
+                    b.ToTable("webhook_events", "payment", t =>
+                        {
+                            t.HasCheckConstraint("ck_webhook_event_attempt", "processing_attempts >= 0");
+
+                            t.HasCheckConstraint("ck_webhook_event_event_key", "(event_key IS NULL OR (signature_valid = true AND btrim(event_key) <> ''))");
+
+                            t.HasCheckConstraint("ck_webhook_event_processed", "(processed_at IS NULL OR (signature_valid = true AND processing_status = 'succeeded' AND payment_request_id IS NOT NULL AND processing_error IS NULL))");
+
+                            t.HasCheckConstraint("ck_webhook_event_resolved_request", "(payment_request_id IS NULL OR signature_valid = true)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(3)")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("currency");
+
+                    b.Property<decimal?>("EstimatedFee")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("estimated_fee");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<DateTimeOffset?>("LastSyncedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_synced_at");
+
+                    b.Property<Guid>("ProviderAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<string>("ProviderPayload")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("provider_payload")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("ProviderPayoutId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_payout_id");
+
+                    b.Property<string>("ProviderStatus")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("provider_status");
+
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("reference_id");
+
+                    b.Property<PayoutBatchStatus>("Status")
+                        .HasColumnType("payment.payout_batch_status")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderAccountId", "Id")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "ProviderPayoutId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payout_batches_provider_id")
+                        .HasFilter("provider_payout_id IS NOT NULL");
+
+                    b.HasIndex("ProviderAccountId", "ReferenceId")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "Status", "LastSyncedAt")
+                        .HasDatabaseName("ix_payout_batches_reconciliation")
+                        .HasFilter("status IN ('submitting', 'processing', 'partially_succeeded')");
+
+                    b.ToTable("payout_batches", "payment");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(3)")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("description");
+
+                    b.Property<byte[]>("DestinationAccountCiphertext")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("destination_account_ciphertext");
+
+                    b.Property<string>("DestinationAccountLast4")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("destination_account_last4");
+
+                    b.Property<string>("DestinationAccountName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("destination_account_name");
+
+                    b.Property<string>("DestinationBin")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("destination_bin");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("failure_code");
+
+                    b.Property<string>("FailureMessage")
+                        .HasColumnType("text")
+                        .HasColumnName("failure_message");
+
+                    b.Property<Guid>("PayoutBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payout_batch_id");
+
+                    b.Property<Guid>("ProviderAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<string>("ProviderStatus")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("provider_status");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_transaction_id");
+
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("reference_id");
+
+                    b.Property<PayoutItemStatusEnum>("Status")
+                        .HasColumnType("payment.payout_item_status_enum")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderAccountId", "Id")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "ProviderTransactionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payout_items_provider_transaction")
+                        .HasFilter("provider_transaction_id IS NOT NULL");
+
+                    b.HasIndex("ProviderAccountId", "PayoutBatchId", "ReferenceId")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderAccountId", "PayoutBatchId", "Status")
+                        .HasDatabaseName("ix_payout_items_batch_status");
+
+                    b.ToTable("payout_items", "payment", t =>
+                        {
+                            t.HasCheckConstraint("ck_payout_items_amount", "(amount > 0)");
+
+                            t.HasCheckConstraint("ck_payout_items_currency", "(currency = 'VND')");
+
+                            t.HasCheckConstraint("ck_payout_items_failure", "status <> 'failed' OR failure_message IS NOT NULL OR failure_code IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_payout_items_last4", "(destination_account_last4 ~ '^[0-9]{4}$')");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -446,7 +768,9 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("MerchantCode")
@@ -454,16 +778,25 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("merchant_code");
 
+                    b.Property<ProviderOwnerScope>("OwnerScope")
+                        .HasColumnType("payment.provider_owner_scope")
+                        .HasColumnName("owner_scope");
+
+                    b.Property<string>("PaymentCredentialsRef")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_credentials_ref");
+
+                    b.Property<string>("PayoutCredentialsRef")
+                        .HasColumnType("text")
+                        .HasColumnName("payout_credentials_ref");
+
                     b.Property<string>("Provider")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("payos")
                         .HasColumnName("provider");
-
-                    b.Property<string>("SecretReference")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("secret_reference");
 
                     b.Property<string>("Settings")
                         .IsRequired()
@@ -472,219 +805,77 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("settings")
                         .HasDefaultValueSql("'{}'::jsonb");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("platform_payment_provider_configs", "platform", t =>
-                        {
-                            t.HasCheckConstraint("CK_platform_provider_code", "btrim(code) <> ''");
-
-                            t.HasCheckConstraint("CK_platform_provider_name", "btrim(provider) <> ''");
-
-                            t.HasCheckConstraint("CK_platform_provider_secret", "btrim(secret_reference) <> ''");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformPermission", b =>
-                {
-                    b.Property<string>("Code")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("code");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.HasKey("Code");
-
-                    b.ToTable("platform_permissions", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("code");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<bool>("IsSystem")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_system");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("platform_roles", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformRolePermission", b =>
-                {
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
-                    b.Property<string>("PermissionCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("permission_code");
-
-                    b.HasKey("RoleId", "PermissionCode");
-
-                    b.HasIndex("PermissionCode");
-
-                    b.ToTable("platform_role_permissions", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformUserRole", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
-                    b.Property<DateTimeOffset>("GrantedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("granted_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("GrantedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("granted_by");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("GrantedBy");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("platform_user_role", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ResidentComplaint", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("ApartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("apartment_id");
-
-                    b.Property<Guid?>("ApartmentResidentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("apartment_resident_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool>("SupportsCollection")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
+                        .HasColumnName("supports_collection");
 
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<Guid>("ReceivedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("received_by");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<ResidentComplaintStatus>("Status")
+                    b.Property<bool>("SupportsPayout")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.resident_complaint_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'assigned'::tenant.resident_complaint_status");
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("supports_payout");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("title");
-
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid>("WebhookKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("webhook_key");
+
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("TenantId", "Id");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_provider_accounts_platform_code")
+                        .HasFilter("owner_scope = 'platform'");
 
-                    b.HasIndex("ApartmentResidentId");
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("ix_provider_accounts_platform_active")
+                        .HasFilter("owner_scope = 'platform'");
 
-                    b.HasIndex("Id", "TenantId")
+                    b.HasIndex("WebhookKey")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "ApartmentId");
+                    b.HasIndex("Provider", "MerchantCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_provider_accounts_merchant")
+                        .HasFilter("merchant_code IS NOT NULL");
 
-                    b.HasIndex("TenantId", "CreatedBy");
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_provider_accounts_tenant_code")
+                        .HasFilter("owner_scope = 'tenant'");
 
-                    b.HasIndex("TenantId", "ReceivedBy");
+                    b.HasIndex("TenantId", "IsActive")
+                        .HasDatabaseName("ix_provider_accounts_tenant_active")
+                        .HasFilter("owner_scope = 'tenant'");
 
-                    b.ToTable("resident_complaints", "tenant");
+                    b.ToTable("provider_accounts", "payment", t =>
+                        {
+                            t.HasCheckConstraint("ck_provider_accounts_capability", "(supports_collection OR supports_payout)");
+
+                            t.HasCheckConstraint("ck_provider_accounts_owner", "((owner_scope = 'platform' AND tenant_id IS NULL) OR (owner_scope = 'tenant' AND tenant_id IS NOT NULL))");
+
+                            t.HasCheckConstraint("ck_provider_accounts_payout_secret", "(NOT supports_payout OR payout_credentials_ref IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_provider_accounts_provider", "(provider = 'payos')");
+
+                            t.HasCheckConstraint("ck_provider_accounts_settings", "(jsonb_typeof(settings) = 'object')");
+
+                            t.HasCheckConstraint("ck_provider_accounts_supports_collection_secret", "(NOT supports_collection OR payment_credentials_ref IS NOT NULL)");
+                        });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.Subscription", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.SubscriptionPaymentAllocation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -692,15 +883,9 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<bool>("AutoRenew")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("auto_renew");
-
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cancelled_at");
+                    b.Property<decimal>("AmountApplied")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_applied");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -708,52 +893,87 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<DateTimeOffset>("EndsAt")
-                        .HasColumnType("timestamp with time zone")
+                    b.Property<Guid>("GatewayAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_account_id");
+
+                    b.Property<Guid>("GatewayTransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_transaction_id");
+
+                    b.Property<Guid>("PaymentAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_attempt_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GatewayAccountId", "GatewayTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("GatewayAccountId", "PaymentAttemptId");
+
+                    b.ToTable("subscription_payment_allocations", "platform", t =>
+                        {
+                            t.HasCheckConstraint("ck_subscription_allocation_amount", "(amount_applied > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<short>("BillingCycleMonthsSnapshot")
+                        .HasColumnType("smallint")
+                        .HasColumnName("billing_cycle_months_snapshot");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateOnly>("EndsAt")
+                        .HasColumnType("date")
                         .HasColumnName("ends_at");
 
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid")
                         .HasColumnName("plan_id");
 
-                    b.Property<DateTimeOffset>("StartsAt")
-                        .HasColumnType("timestamp with time zone")
+                    b.Property<DateOnly>("StartsAt")
+                        .HasColumnType("date")
                         .HasColumnName("starts_at");
 
                     b.Property<SubscriptionStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("platform.subscription_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'trial'::platform.subscription_status_enum");
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PlanId");
 
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Status", "EndsAt")
-                        .IsDescending(false, false, true)
-                        .HasDatabaseName("subscriptions_current_idx");
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subscriptions_tenant_active")
+                        .HasFilter("status IN ('trial', 'active', 'past_due')");
 
                     b.ToTable("subscriptions", "platform", t =>
                         {
-                            t.HasCheckConstraint("CK_subscriptions_dates", "ends_at > starts_at");
+                            t.HasCheckConstraint("ck_subscriptions_billing_cycle", "billing_cycle_months_snapshot > 0");
+
+                            t.HasCheckConstraint("ck_subscriptions_cancelled", "status <> 'cancelled' OR cancelled_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_subscriptions_period", "ends_at > starts_at");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionEvent", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -761,151 +981,13 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
+                    b.Property<DateOnly?>("BillingPeriodFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("billing_period_from");
 
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("data")
-                        .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("event_type");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("subscription_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubscriptionId");
-
-                    b.ToTable("subscription_events", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionInvoice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset?>("DueAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("due_at");
-
-                    b.Property<string>("InvoiceNo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("invoice_no");
-
-                    b.Property<DateTimeOffset?>("IssuedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("issued_at");
-
-                    b.Property<decimal>("PaidAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("paid_amount");
-
-                    b.Property<NpgsqlRange<DateOnly>>("Period")
-                        .HasColumnType("daterange")
-                        .HasColumnName("period");
-
-                    b.Property<SubscriptionInvoiceStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("platform.subscription_invoice_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::platform.subscription_invoice_status");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("subscription_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InvoiceNo")
-                        .IsUnique();
-
-                    b.HasIndex("SubscriptionId");
-
-                    b.ToTable("subscription_invoices", "platform", t =>
-                        {
-                            t.HasCheckConstraint("CK_subscription_invoice_paid_le_amount", "paid_amount <= amount");
-
-                            t.HasCheckConstraint("CK_subscription_invoices_amount_positive", "amount >= 0");
-
-                            t.HasCheckConstraint("CK_subscription_invoices_paid_amount_positive", "paid_amount >= 0");
-
-                            t.HasCheckConstraint("CK_subscription_invoices_period_not_empty", "NOT isempty(period)");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentOrder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<decimal>("AmountPaid")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("amount_paid");
-
-                    b.Property<string>("CancelUrl")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("cancel_url");
-
-                    b.Property<string>("CancellationReason")
-                        .HasColumnType("text")
-                        .HasColumnName("cancellation_reason");
-
-                    b.Property<DateTimeOffset>("CancelledAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cancelled_at");
-
-                    b.Property<string>("CheckoutUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("checkout_url");
+                    b.Property<DateOnly?>("BillingPeriodTo")
+                        .HasColumnType("date")
+                        .HasColumnName("billing_period_to");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -916,52 +998,41 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Property<string>("Currency")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("character(3)")
+                        .HasColumnType("char(3)")
                         .HasDefaultValue("VND")
                         .HasColumnName("currency");
 
-                    b.Property<DateTimeOffset>("ExpiresAt")
+                    b.Property<DateTimeOffset>("DueAt")
                         .HasColumnType("timestamptz")
-                        .HasColumnName("expires_at");
+                        .HasColumnName("due_at");
 
-                    b.Property<long>("OrderCode")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("order_code")
-                        .HasDefaultValueSql("nextval('platform.subscription_payment_order_code_seq')");
-
-                    b.Property<Guid>("ProviderConfigId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("provider_config_id");
-
-                    b.Property<string>("ProviderPaymentLinkId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_payment_link_id");
-
-                    b.Property<string>("QrCode")
-                        .HasColumnType("text")
-                        .HasColumnName("qr_code");
-
-                    b.Property<Guid?>("RequestedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("requested_by");
-
-                    b.Property<string>("ReturnUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("return_url");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("InvoiceNo")
                         .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("invoice_no");
+
+                    b.Property<decimal>("PaidAmount")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Pending")
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("paid_amount");
+
+                    b.Property<SubscriptionInvoiceStatus>("Status")
+                        .HasColumnType("platform.subscription_invoice_status")
                         .HasColumnName("status");
 
-                    b.Property<Guid>("SubscriptionInvoiceId")
+                    b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uuid")
-                        .HasColumnName("subscription_invoice_id");
+                        .HasColumnName("subscription_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -971,48 +1042,30 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderCode")
+                    b.HasIndex("TenantId", "InvoiceNo")
                         .IsUnique();
 
-                    b.HasIndex("RequestedBy");
+                    b.HasIndex("TenantId", "SubscriptionId");
 
-                    b.HasIndex("ProviderConfigId", "ProviderPaymentLinkId")
-                        .IsUnique()
-                        .HasFilter("provider_payment_link_id IS NOT NULL");
+                    b.HasIndex("TenantId", "Status", "DueAt")
+                        .HasDatabaseName("ix_subscription_invoices_due")
+                        .HasFilter("status IN ('issued', 'partially_paid', 'overdue')");
 
-                    b.HasIndex("Status", "ExpiresAt")
-                        .HasFilter("status IN ('Pending', 'Underpaid')");
-
-                    b.HasIndex("SubscriptionInvoiceId", "CreatedAt");
-
-                    b.ToTable("subscription_payment_orders", "platform", t =>
+                    b.ToTable("subscription_invoices", "platform", t =>
                         {
-                            t.HasCheckConstraint("CK_subscription_order_amount", "amount > 0");
+                            t.HasCheckConstraint("ck_subscription_invoices_amount", "(total_amount > 0 AND paid_amount >= 0 AND paid_amount <= total_amount)");
 
-                            t.HasCheckConstraint("CK_subscription_order_code", "order_code > 0");
-
-                            t.HasCheckConstraint("CK_subscription_order_currency", "currency = 'VND'");
-
-                            t.HasCheckConstraint("CK_subscription_order_link", "provider_payment_link_id IS NULL OR btrim(provider_payment_link_id) <> ''");
-
-                            t.HasCheckConstraint("CK_subscription_order_paid", "amount_paid >= 0");
-
-                            t.HasCheckConstraint("CK_subscription_order_status", "status IN ('Pending', 'Underpaid', 'Paid', 'Cancelled', 'Expired', 'Failed')");
+                            t.HasCheckConstraint("ck_subscription_invoices_billing_period", "(billing_period_from IS NULL AND billing_period_to IS NULL) OR (billing_period_from IS NOT NULL AND billing_period_to IS NOT NULL AND billing_period_to > billing_period_from)");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentTransaction", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPaymentAttempt", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1020,157 +1073,46 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("occurred_at");
-
-                    b.Property<string>("PayerMasked")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payer_masked")
-                        .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<Guid>("PaymentOrderId")
+                    b.Property<Guid>("GatewayAccountId")
                         .HasColumnType("uuid")
-                        .HasColumnName("payment_order_id");
+                        .HasColumnName("gateway_account_id");
 
-                    b.Property<Guid>("ProviderConfigId")
+                    b.Property<Guid>("GatewayPaymentRequestId")
                         .HasColumnType("uuid")
-                        .HasColumnName("provider_config_id");
+                        .HasColumnName("gateway_payment_request_id");
 
-                    b.Property<string>("ProviderPayload")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("provider_payload")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
 
-                    b.Property<string>("ProviderReference")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_reference");
-
-                    b.Property<string>("ProviderTransactionId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_transaction_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Received")
+                    b.Property<SubscriptionPaymentAttemptStatus>("Status")
+                        .HasColumnType("platform.subscription_payment_attempt_status")
                         .HasColumnName("status");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("PaymentOrderId", "OccurredAt");
-
-                    b.HasIndex("ProviderConfigId", "PaymentOrderId");
-
-                    b.HasIndex("ProviderConfigId", "ProviderTransactionId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_subscription_payment_transaction_configs_provider_config_i~1");
-
-                    b.ToTable("subscription_payment_transaction_configs", "platform", t =>
-                        {
-                            t.HasCheckConstraint("CK_subscription_transaction_amount", "amount > 0");
-
-                            t.HasCheckConstraint("CK_subscription_transaction_provider_id", "btrim(provider_transaction_id) <> ''");
-
-                            t.HasCheckConstraint("CK_subscription_transaction_status", "status IN ('Received', 'Verified', 'Rejected', 'Refunded')");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentWebhookEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("SubscriptionInvoiceId")
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("EventKey")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("event_key");
-
-                    b.Property<bool>("IsSignatureValid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_signature_valid");
-
-                    b.Property<DateTimeOffset?>("LastAttemptAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("last_attempt_at");
-
-                    b.Property<long?>("OrderCode")
-                        .HasColumnType("bigint")
-                        .HasColumnName("order_code");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("payload");
-
-                    b.Property<Guid?>("PaymentOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("payment_order_id");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("processed_at");
-
-                    b.Property<int>("ProcessingAttempts")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("processing_attempts");
-
-                    b.Property<string>("ProcessingError")
-                        .HasColumnType("text")
-                        .HasColumnName("processing_error");
-
-                    b.Property<Guid>("ProviderConfigId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("provider_config_id");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("received_at")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnName("subscription_invoice_id");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReceivedAt")
-                        .HasFilter("is_signature_valid = TRUE AND processed_at IS NULL");
+                    b.HasIndex("GatewayPaymentRequestId")
+                        .IsUnique();
 
-                    b.HasIndex("ProviderConfigId", "EventKey")
-                        .IsUnique()
-                        .HasFilter("event_key IS NOT NULL");
+                    b.HasIndex("RequestedByUserId");
 
-                    b.HasIndex("ProviderConfigId", "OrderCode");
+                    b.HasIndex("GatewayAccountId", "GatewayPaymentRequestId");
 
-                    b.HasIndex("ProviderConfigId", "PaymentOrderId");
+                    b.HasIndex("GatewayAccountId", "Id")
+                        .IsUnique();
 
-                    b.ToTable("subscription_payment_webhook_events", "platform", t =>
-                        {
-                            t.HasCheckConstraint("CK_subscription_webhook_attempts", "processing_attempts >= 0");
+                    b.HasIndex("SubscriptionInvoiceId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_subscription_attempt_invoice");
 
-                            t.HasCheckConstraint("CK_subscription_webhook_event_key", "event_key IS NULL OR (is_signature_valid = TRUE AND btrim(event_key) <> '')");
-
-                            t.HasCheckConstraint("CK_subscription_webhook_order_verified", "payment_order_id IS NULL OR is_signature_valid = TRUE");
-
-                            t.HasCheckConstraint("CK_subscription_webhook_processed", "processed_at IS NULL OR (is_signature_valid = TRUE AND payment_order_id IS NOT NULL AND processing_error IS NULL)");
-                        });
+                    b.ToTable("subscription_payment_attempts", "platform");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPlan", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPlan", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1179,9 +1121,7 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<short>("BillingCycleMonths")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
-                        .HasDefaultValue((short)6)
                         .HasColumnName("billing_cycle_months");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -1190,9 +1130,17 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid>("CreatedByAdmin")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_admin");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedByAdmin")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by_admin");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -1234,17 +1182,27 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid?>("UpdatedByAdmin")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_admin");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedByAdmin");
+
+                    b.HasIndex("DeletedByAdmin");
+
+                    b.HasIndex("UpdatedByAdmin");
 
                     b.ToTable("subscription_plans", "platform", t =>
                         {
-                            t.HasCheckConstraint("CK_subscription_plans_billing_cycle_months", "billing_cycle_months IN (6, 12, 24)");
-
                             t.HasCheckConstraint("CK_subscription_plans_price", "price >= 0");
+
+                            t.HasCheckConstraint("ck_subscription_plans_billing_cycle", "billing_cycle_months IN (6, 12, 24)");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SupportTicket", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1252,169 +1210,16 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<DateTimeOffset?>("DueAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("due_at");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<string>("Message")
+                    b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<Guid>("ReceiverId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("receiver_id");
-
-                    b.Property<Guid>("RequesterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("requester_id");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<SupportTicketStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("platform.support_ticket_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'open'::platform.support_ticket_status");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("subject");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id", "TenantId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "ReceiverId");
-
-                    b.HasIndex("TenantId", "RequesterId");
-
-                    b.ToTable("support_tickets", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SystemIncident", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("code");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<short>("Severity")
-                        .HasColumnType("smallint")
-                        .HasColumnName("severity");
-
-                    b.Property<SystemIncidentStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("platform.system_incident_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'investigating'::platform.system_incident_status");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.ToTable("system_incidents", "platform");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.Tenant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset?>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("activated_at");
+                        .HasColumnName("address");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("code");
-
-                    b.Property<string>("Contact")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("contact");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1434,31 +1239,18 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("slug");
 
                     b.Property<TenantStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("platform.tenant_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'trial'::platform.tenant_status_enum");
-
-                    b.Property<DateTimeOffset?>("SuspendedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("suspended_at");
-
-                    b.Property<string>("SuspensionReason")
-                        .HasColumnType("text")
-                        .HasColumnName("suspension_reason");
+                        .HasColumnName("status");
 
                     b.Property<string>("TaxCode")
+                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("tax_code");
 
                     b.Property<DateTimeOffset?>("TrialEndsAt")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("trial_ends_at");
-
-                    b.Property<DateTimeOffset?>("TrialStartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("trial_started_at");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -1474,15 +1266,42 @@ namespace EzCondo.BackEndServer.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
+                    b.HasIndex("TaxCode")
+                        .IsUnique();
+
                     b.ToTable("tenants", "platform", t =>
                         {
                             t.HasCheckConstraint("CK_tenants_slug_format", "slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'");
 
-                            t.HasCheckConstraint("CK_tenants_trial_dates", "trial_ends_at IS NULL OR trial_started_at IS NULL OR trial_ends_at > trial_started_at");
+                            t.HasCheckConstraint("ck_tenants_trial", "status <> 'trial' OR trial_ends_at IS NOT NULL");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantAiChatMessage", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Permission", b =>
+                {
+                    b.Property<RoleScopeEnum>("Scope")
+                        .HasColumnType("security.role_scope_enum")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.HasKey("Scope", "Code");
+
+                    b.ToTable("permissions", "security", t =>
+                        {
+                            t.HasCheckConstraint("ck_permissions_code_scope", "(scope = 'platform' AND code LIKE 'platform.%') OR (scope = 'tenant' AND code LIKE 'tenant.%')");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1490,51 +1309,82 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<string>("Citations")
+                    b.Property<string>("Code")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("citations")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
 
-                    b.Property<string>("Content")
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("content");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
+                    b.Property<RoleScopeEnum>("Scope")
+                        .HasColumnType("security.role_scope_enum")
+                        .HasColumnName("scope");
 
-                    b.Property<string>("Model")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("model");
-
-                    b.Property<AiRoleEnum>("Role")
-                        .HasColumnType("tenant.ai_role_enum")
-                        .HasColumnName("role");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("session_id");
-
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_roles_platform_code")
+                        .HasFilter("scope = 'platform' AND is_deleted = false");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_roles_tenant_code")
+                        .HasFilter("scope = 'tenant' AND is_deleted = false");
 
-                    b.ToTable("tenant_ai_chat_messages", "tenant");
+                    b.ToTable("roles", "security", t =>
+                        {
+                            t.HasCheckConstraint("ck_roles_owner_scope", "(scope = 'platform' AND tenant_id IS NULL) OR (scope = 'tenant' AND tenant_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_roles_platform_code", "scope <> 'platform' OR code = 'PLATFORM_ADMIN'");
+                        });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantAiChatSession", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.RolePermission", b =>
+                {
+                    b.Property<RoleScopeEnum>("Scope")
+                        .HasColumnType("security.role_scope_enum")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<string>("PermissionCode")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("permission_code");
+
+                    b.HasKey("Scope", "RoleId", "PermissionCode");
+
+                    b.HasIndex("Scope", "PermissionCode", "RoleId")
+                        .HasDatabaseName("ix_role_permissions_permission");
+
+                    b.ToTable("role_permissions", "security");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.UserRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1542,48 +1392,65 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("granted_at");
 
-                    b.Property<DateTimeOffset>("LastMessageAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_message_at")
-                        .HasDefaultValueSql("now()");
+                    b.Property<Guid?>("GrantedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("granted_by_user_id");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<RoleScopeEnum>("Scope")
+                        .HasColumnType("security.role_scope_enum")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
-
-                    b.Property<Guid?>("TenantId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id1");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id1");
-
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("TenantId", "Id");
+                    b.HasIndex("GrantedByUserId");
 
-                    b.HasIndex("TenantId1");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_user_roles_platform_user_active")
+                        .HasFilter("scope = 'platform' AND revoked_at IS NULL");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("Scope", "RoleId");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("TenantId", "UserId")
+                        .HasDatabaseName("ix_user_roles_tenant_user_active")
+                        .HasFilter("scope = 'tenant' AND revoked_at IS NULL");
 
-                    b.ToTable("tenant_ai_chat_sessions", "tenant");
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("TenantId", "UserId"), new[] { "RoleId" });
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_role_active")
+                        .HasFilter("revoked_at IS NULL");
+
+                    b.ToTable("user_roles", "security", t =>
+                        {
+                            t.HasCheckConstraint("ck_user_roles_revoked_at", "revoked_at IS NULL OR revoked_at >= granted_at");
+
+                            t.HasCheckConstraint("ck_user_roles_scope_tenant", "(scope = 'platform' AND tenant_id IS NULL) OR (scope = 'tenant' AND tenant_id IS NOT NULL)");
+                        });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantApartment", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Apartment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1596,6 +1463,10 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("apartment_no");
 
+                    b.Property<Guid>("ApartmentRenter")
+                        .HasColumnType("uuid")
+                        .HasColumnName("apartment_renter");
+
                     b.Property<decimal>("AreaM2")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
@@ -1604,164 +1475,6 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Property<short>("Bedroom")
                         .HasColumnType("smallint")
                         .HasColumnName("bedroom");
-
-                    b.Property<Guid>("BuildingId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("building_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<ApartmentStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.apartment_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'available'::tenant.apartment_status_enum");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "BuildingId");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "ApartmentNo", "BuildingId")
-                        .IsUnique();
-
-                    b.ToTable("tenant_apartments", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_tenant_apartments_areaM2_positive", "area_m2 > 0");
-
-                            t.HasCheckConstraint("CK_tenant_apartments_bedroom_positive", "bedroom >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBillingPeriod", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset>("ClosedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("closed_at");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset>("DueAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("due_at");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
-
-                    b.Property<NpgsqlRange<DateOnly>>("Period")
-                        .HasColumnType("daterange")
-                        .HasColumnName("period");
-
-                    b.Property<BillingPeriodStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.billing_period_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::tenant.billing_period_status");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "CreatedBy");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.ToTable("tenant_billing_periods", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_billing_periods_period_not_empty", "NOT isempty(period)");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBuilding", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("address");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("name");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.ToTable("tenant_buildings", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvitation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset?>("AcceptedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("accepted_at");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1773,41 +1486,15 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("citext")
-                        .HasColumnName("email");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
-
-                    b.Property<Guid>("InvitedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("invited_by");
-
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("revoked_at");
-
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
-
-                    b.Property<Guid>("TenantRoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_role_id");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("token_hash");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -1817,28 +1504,20 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("TenantId", "Id");
+                    b.HasIndex("ApartmentRenter");
 
-                    b.HasIndex("TenantRoleId");
-
-                    b.HasIndex("TokenHash")
+                    b.HasIndex("TenantId", "ApartmentNo")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "Email")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "InvitedBy");
-
-                    b.ToTable("tenant_invitations", "tenant", t =>
+                    b.ToTable("apartments", "tenant", t =>
                         {
-                            t.HasCheckConstraint("CK_tenant_invitations_expires_at_le_created_at", "expires_at > created_at");
+                            t.HasCheckConstraint("CK_tenant_apartments_areaM2_positive", "area_m2 > 0");
+
+                            t.HasCheckConstraint("CK_tenant_apartments_bedroom_positive", "bedroom >= 0");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvoice", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Complaint", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1846,24 +1525,152 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<decimal>("AdjustmentAmount")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("adjustment_amount");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedByResident")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_resident");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<Guid?>("ReceivedByStaff")
+                        .HasColumnType("uuid")
+                        .HasColumnName("received_by_staff");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByResident");
+
+                    b.HasIndex("ReceivedByStaff");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("complaints", "tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Contract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<Guid>("ApartmentId")
                         .HasColumnType("uuid")
                         .HasColumnName("apartment_id");
 
-                    b.Property<Guid>("BillingContactId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("billing_contact_id");
+                    b.Property<string>("ContractNo")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("contract_no");
 
-                    b.Property<Guid>("BillingPeriodId")
+                    b.Property<string>("ContractUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("contract_url");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("ends_at");
+
+                    b.Property<Guid>("ImportedBy")
                         .HasColumnType("uuid")
-                        .HasColumnName("billing_period_id");
+                        .HasColumnName("imported_by");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("starts_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportedBy");
+
+                    b.HasIndex("TenantId", "ApartmentId");
+
+                    b.HasIndex("TenantId", "ContractNo")
+                        .IsUnique();
+
+                    b.ToTable("contracts", "tenant", t =>
+                        {
+                            t.HasCheckConstraint("ck_contracts_period", "ends_at > starts_at");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("accepted_at");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1875,24 +1682,116 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
-                    b.Property<string>("Currency")
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Email")
                         .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(3)")
-                        .HasDefaultValue("VND")
-                        .HasColumnName("currency");
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<InvitationStatusEnum>("Status")
+                        .HasColumnType("tenant.invitation_status_enum")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_user_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("TargetUserId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ExpiresAt")
+                        .HasDatabaseName("ix_invitations_expiring")
+                        .HasFilter("status = 'sent'");
+
+                    b.HasIndex("TenantId", "Email", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_invitations_active")
+                        .HasFilter("status = 'sent' AND is_deleted = false");
+
+                    b.HasIndex("TenantId", "Email", "TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("invitations", "tenant", t =>
+                        {
+                            t.HasCheckConstraint("ck_invitations_accepted", "status <> 'accepted' OR accepted_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_invitations_expiry", "expires_at > created_at");
+
+                            t.HasCheckConstraint("ck_invitations_revoked", "status <> 'revoked' OR revoked_at IS NOT NULL");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ApartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("apartment_id");
+
+                    b.Property<DateTimeOffset>("BillingPeriod")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("billing_period");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedByStaff")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_staff");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<Guid?>("DeletedBy")
+                    b.Property<Guid?>("DeletedByStaff")
                         .HasColumnType("uuid")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<DateTimeOffset?>("DueAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("due_at");
+                        .HasColumnName("deleted_by_staff");
 
                     b.Property<string>("InvoiceNo")
                         .IsRequired()
@@ -1906,44 +1805,29 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
 
-                    b.Property<DateTimeOffset?>("IssuedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("issued_at");
-
                     b.Property<string>("Note")
                         .HasColumnType("text")
                         .HasColumnName("note");
 
-                    b.Property<decimal>("PaidAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("paid_amount");
+                    b.Property<DateTimeOffset>("PaymentDeadlineAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("payment_deadline_at");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("published_at");
 
                     b.Property<TenantInvoiceStatus>("Status")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("tenant.tenant_invoice_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::tenant.tenant_invoice_status");
-
-                    b.Property<decimal>("SubtotalAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("subtotal_amount");
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
                     b.Property<decimal>("TotalAmount")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric")
-                        .HasColumnName("total_amount")
-                        .HasComputedColumnSql("subtotal_amount + adjustment_amount", true);
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -1951,46 +1835,27 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<Guid?>("UpdatedBy")
+                    b.Property<Guid?>("UpdatedByStaff")
                         .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
+                        .HasColumnName("updated_by_staff");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CreatedByStaff");
 
-                    b.HasIndex("BillingPeriodId", "ApartmentId")
-                        .IsUnique();
+                    b.HasIndex("DeletedByStaff");
 
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("BillingPeriodId", "ApartmentId"), false);
+                    b.HasIndex("UpdatedByStaff");
 
                     b.HasIndex("TenantId", "ApartmentId");
-
-                    b.HasIndex("TenantId", "BillingContactId");
-
-                    b.HasIndex("TenantId", "BillingPeriodId");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
 
                     b.HasIndex("TenantId", "InvoiceNo")
                         .IsUnique();
 
-                    b.ToTable("tenant_invoices", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_tenant_invoices_paid_amount_positive", "paid_amount >= 0");
-
-                            t.HasCheckConstraint("CK_tenant_invoices_paid_le_total", "paid_amount <= total_amount");
-
-                            t.HasCheckConstraint("CK_tenant_invoices_subtotal_amount_positive", "subtotal_amount >= 0");
-                        });
+                    b.ToTable("invoices", "tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvoiceLine", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoiceDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1998,32 +1863,20 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
+                        .HasColumnType("text")
                         .HasColumnName("description");
 
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
 
-                    b.Property<decimal>("LineAmount")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("line_amount")
-                        .HasComputedColumnSql("round(quantity * unit_price, 2)", true);
-
-                    b.Property<decimal>("Quantity")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(14,3)")
-                        .HasDefaultValue(1m)
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<Guid>("ServiceId")
@@ -2033,12 +1886,6 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,2)")
@@ -2050,15 +1897,17 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasIndex("TenantId", "ServiceId");
 
-                    b.ToTable("tenant_invoice_lines", "tenant", t =>
+                    b.ToTable("invoice_details", "tenant", t =>
                         {
-                            t.HasCheckConstraint("CK_tenant_invoice_lines_quantity_positive", "quantity >= 0");
+                            t.HasCheckConstraint("ck_invoice_details_amount", "amount >= 0 AND amount = quantity * unit_price");
 
-                            t.HasCheckConstraint("CK_tenant_invoice_lines_unit_price_positive", "unit_price >= 0");
+                            t.HasCheckConstraint("ck_invoice_details_quantity", "quantity > 0");
+
+                            t.HasCheckConstraint("ck_invoice_details_unit_price", "unit_price >= 0");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentOrder", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAllocation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2066,33 +1915,9 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
+                    b.Property<decimal>("AmountApplied")
                         .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<decimal>("AmountPaid")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("amount_paid");
-
-                    b.Property<string>("CancelUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("cancel_url");
-
-                    b.Property<string>("CancellationReason")
-                        .HasColumnType("text")
-                        .HasColumnName("cancellation_reason");
-
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cancelled_at");
-
-                    b.Property<string>("CheckoutUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("checkout_url");
+                        .HasColumnName("amount_applied");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2100,304 +1925,109 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(3)")
-                        .HasDefaultValue("VND")
-                        .HasColumnName("currency");
-
-                    b.Property<DateTimeOffset?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
-
-                    b.Property<long>("OrderCode")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("order_code")
-                        .HasDefaultValueSql("nextval('tenant.payos_order_code_seq')");
-
-                    b.Property<Guid>("ProviderConfigId")
+                    b.Property<Guid>("GatewayAccountId")
                         .HasColumnType("uuid")
-                        .HasColumnName("provider_config_id");
+                        .HasColumnName("gateway_account_id");
 
-                    b.Property<string>("ProviderPaymentLinkId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_payment_link_id");
-
-                    b.Property<string>("QrCode")
-                        .HasColumnType("text")
-                        .HasColumnName("qr_code");
-
-                    b.Property<Guid>("RequestBy")
+                    b.Property<Guid>("GatewayTransactionId")
                         .HasColumnType("uuid")
-                        .HasColumnName("request_by");
+                        .HasColumnName("gateway_transaction_id");
 
-                    b.Property<string>("ReturnUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("return_url");
-
-                    b.Property<PaymentOrderStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.payment_order_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'pending'::tenant.payment_order_status");
+                    b.Property<Guid>("PaymentAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_attempt_id");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
-                    b.Property<Guid>("TenantInvoiceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_invoice_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderCode")
+                    b.HasIndex("GatewayAccountId", "GatewayTransactionId")
                         .IsUnique();
 
-                    b.HasIndex("ProviderPaymentLinkId")
+                    b.HasIndex("TenantId", "PaymentAttemptId")
+                        .HasDatabaseName("ix_invoice_allocation_attempt");
+
+                    b.HasIndex("TenantId", "GatewayAccountId", "PaymentAttemptId");
+
+                    b.ToTable("invoice_payment_allocations", "tenant", t =>
+                        {
+                            t.HasCheckConstraint("ck_invoice_allocation_amount", "(amount_applied > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("GatewayAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_account_id");
+
+                    b.Property<Guid>("GatewayPaymentRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_payment_request_id");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<InvoicePaymentAttemptStatus>("Status")
+                        .HasColumnType("tenant.invoice_payment_attempt_status")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GatewayPaymentRequestId")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "ProviderConfigId");
+                    b.HasIndex("RequestedByUserId");
 
-                    b.HasIndex("TenantId", "RequestBy");
+                    b.HasIndex("GatewayAccountId", "GatewayPaymentRequestId");
 
-                    b.HasIndex("TenantId", "TenantInvoiceId");
+                    b.HasIndex("GatewayAccountId", "Id")
+                        .IsUnique();
 
-                    b.HasIndex("TenantId", "Status", "ExpiresAt")
-                        .HasDatabaseName("payment_orders_idx")
-                        .HasFilter("\"status\" IN ('pending'::tenant.payment_order_status, 'underpaid'::tenant.payment_order_status)");
+                    b.HasIndex("TenantId", "Id")
+                        .IsUnique();
 
-                    b.ToTable("tenant_payment_orders", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_payment_orders_amount_paid_nonnegative", "amount_paid >= 0");
+                    b.HasIndex("TenantId", "InvoiceId", "CreatedAt")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_invoice_payment_attempt_invoice");
 
-                            t.HasCheckConstraint("CK_payment_orders_amount_paid_not_exceed_amount", "amount_paid <= amount");
+                    b.HasIndex("TenantId", "Status", "CreatedAt")
+                        .HasDatabaseName("ix_invoice_payment_attempt_open")
+                        .HasFilter("status IN ('pending', 'partially_paid')");
 
-                            t.HasCheckConstraint("CK_payment_orders_amount_positive", "amount > 0");
-                        });
+                    b.ToTable("invoice_payment_attempts", "tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentProviderConfig", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Payroll", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("MerchantCode")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("merchant_code");
-
-                    b.Property<string>("SecretReference")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("secret_reference");
-
-                    b.Property<string>("Settings")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("settings")
-                        .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("tenant_payment_provider_config", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occurred_at");
-
-                    b.Property<string>("PayerMasked")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payer_masked")
-                        .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<Guid>("PaymentOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("payment_order_id");
-
-                    b.Property<string>("ProviderPayload")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("provider_payload")
-                        .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<string>("ProviderReference")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_reference");
-
-                    b.Property<string>("ProviderTransactionId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("provider_transaction_id");
-
-                    b.Property<PaymentTransactionStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.payment_transaction_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'received'::tenant.payment_transaction_status");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<Guid?>("TenantId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id1");
-
-                    b.Property<Guid?>("TenantPaymentOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_payment_order_id");
-
-                    b.HasKey("Id");
-
-                    b.HasAlternateKey("TenantId", "Id");
-
-                    b.HasIndex("TenantId1");
-
-                    b.HasIndex("TenantPaymentOrderId");
-
-                    b.HasIndex("TenantId", "PaymentOrderId");
-
-                    b.ToTable("tenant_payment_transactions", "tenant", t =>
-                        {
-                            t.HasCheckConstraint("CK_payment_transactions_amount", "amount > 0");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentWebhookEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("EventKey")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("event_key");
-
-                    b.Property<bool>("IsSignatureValid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_signature_valid");
-
-                    b.Property<int?>("OrderCode")
-                        .HasColumnType("integer")
-                        .HasColumnName("order_code");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("processed_at");
-
-                    b.Property<string>("ProcessingError")
-                        .HasColumnType("text")
-                        .HasColumnName("processing_error");
-
-                    b.Property<Guid>("ProviderConfigId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("provider_config_id");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("received_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ProviderConfigId");
-
-                    b.ToTable("tenant_webhook_events", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPayroll", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("approved_at");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2419,39 +2049,17 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
 
-                    b.Property<DateTimeOffset?>("IssuedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("issued_at");
+                    b.Property<decimal>("Netpay")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("netpay");
 
-                    b.Property<Guid?>("IssuedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("issued_by");
-
-                    b.Property<Guid>("ReceiveBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("receive_by");
-
-                    b.Property<DateTimeOffset?>("RejectedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("rejected_at");
-
-                    b.Property<Guid?>("RejectedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("rejected_by");
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("published_at");
 
                     b.Property<PayrollStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("tenant.payroll_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::tenant.payroll_status_enum");
-
-                    b.Property<DateTimeOffset?>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("submitted_at");
-
-                    b.Property<Guid?>("SubmittedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("submitted_by");
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -2463,38 +2071,31 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("total_amount");
-
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<int>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "ApprovedBy");
+                    b.HasIndex("CreatedBy");
 
-                    b.HasIndex("TenantId", "CreatedBy");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "IssuedBy");
-
-                    b.HasIndex("TenantId", "RejectedBy");
-
-                    b.HasIndex("TenantId", "SubmittedBy");
-
-                    b.ToTable("tenant_payrolls", "tenant", t =>
+                    b.ToTable("payrolls", "tenant", t =>
                         {
-                            t.HasCheckConstraint("CK_tenant_payrolls_total_amount_positive", "total_amount >= 0");
+                            t.HasCheckConstraint("CK_tenant_payrolls_netpay_positive", "netpay >= 0");
+
+                            t.HasCheckConstraint("ck_payrolls_version", "version > 0");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPayrollDetail", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2514,17 +2115,13 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("deduction");
 
-                    b.Property<decimal>("NetPay")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("net_pay");
-
                     b.Property<Guid>("PayrollId")
                         .HasColumnType("uuid")
                         .HasColumnName("payroll_id");
 
-                    b.Property<Guid>("RecipientId")
+                    b.Property<Guid>("StaffReceive")
                         .HasColumnType("uuid")
-                        .HasColumnName("recipient_id");
+                        .HasColumnName("staff_receive");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -2532,44 +2129,22 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "Id")
+                    b.HasIndex("StaffReceive");
+
+                    b.HasIndex("TenantId", "PayrollId", "StaffReceive")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "RecipientId");
-
-                    b.HasIndex("TenantId", "PayrollId", "RecipientId")
-                        .IsUnique();
-
-                    b.ToTable("tenant_payroll_details", "tenant", t =>
+                    b.ToTable("payroll_details", "tenant", t =>
                         {
                             t.HasCheckConstraint("CK_tenant_payroll_details_allowance_positive", "allowance >= 0");
 
                             t.HasCheckConstraint("CK_tenant_payroll_details_base_salary_positive", "base_salary > 0");
 
                             t.HasCheckConstraint("CK_tenant_payroll_details_deduction_positive", "deduction >= 0");
-
-                            t.HasCheckConstraint("CK_tenant_payroll_details_net_pay", "net_pay >= 0");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPermission", b =>
-                {
-                    b.Property<string>("Code")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("code");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.HasKey("Code");
-
-                    b.ToTable("tenant_permissions", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantResident", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursement", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2577,10 +2152,22 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<string>("CitizenId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("citizen_id");
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("approved_at");
+
+                    b.Property<Guid>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<byte[]>("ApprovedContentHash")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("approved_content_hash");
+
+                    b.Property<int>("ApprovedPayrollVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("approved_payroll_version");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2588,45 +2175,37 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<DateOnly?>("DateOfBirth")
-                        .IsRequired()
-                        .HasColumnType("date")
-                        .HasColumnName("date_of_birth");
+                    b.Property<Guid>("GatewayAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_account_id");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
+                    b.Property<Guid?>("GatewayPayoutBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_payout_batch_id");
 
-                    b.Property<string>("Email")
-                        .HasColumnType("citext")
-                        .HasColumnName("email");
+                    b.Property<DateTimeOffset?>("IssuedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("issued_at");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("full_name");
+                    b.Property<Guid?>("IssuedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("issued_by_user_id");
 
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
+                    b.Property<Guid>("PayrollId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_id");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("phone");
-
-                    b.Property<TenantResidentStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.tenant_resident_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'invited'::tenant.tenant_resident_status");
+                    b.Property<PayrollDisbursementStatus>("Status")
+                        .HasColumnType("tenant.payroll_disbursement_status")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -2634,101 +2213,41 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "CitizenId")
-                        .IsUnique();
+                    b.HasIndex("ApprovedByUserId");
+
+                    b.HasIndex("IssuedByUserId");
+
+                    b.HasIndex("GatewayAccountId", "GatewayPayoutBatchId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payroll_disbursement_gateway_batch")
+                        .HasFilter("gateway_payout_batch_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "Id")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "UserId")
+                    b.HasIndex("TenantId", "PayrollId", "ApprovedPayrollVersion")
                         .IsUnique();
 
-                    b.ToTable("tenant_residents", "tenant");
-                });
+                    b.HasIndex("TenantId", "Status", "CreatedAt")
+                        .HasDatabaseName("ix_payroll_disbursement_status");
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantRole", b =>
-                {
-                    b.Property<Guid>("Role")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("role");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("code");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<short>("HierarchyLevel")
-                        .HasColumnType("smallint")
-                        .HasColumnName("hierarchy_level");
-
-                    b.Property<bool>("IsSystem")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_system");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("name");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Role");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("Code", "TenantId")
-                        .IsUnique();
-
-                    b.ToTable("tenant_roles", "tenant", t =>
+                    b.ToTable("payroll_disbursements", "tenant", t =>
                         {
-                            t.HasCheckConstraint("tenant_roles_hierarchy_check", "hierarchy_level BETWEEN 0 AND 100");
+                            t.HasCheckConstraint("ck_payroll_disbursement_amount", "(total_amount > 0)");
+
+                            t.HasCheckConstraint("ck_payroll_disbursement_hash", "(octet_length(approved_content_hash) = 32)");
+
+                            t.HasCheckConstraint("ck_payroll_disbursement_issued", "((issued_at IS NULL AND issued_by_user_id IS NULL) OR (issued_at IS NOT NULL AND issued_by_user_id IS NOT NULL))");
+
+                            t.HasCheckConstraint("ck_payroll_disbursement_status_issued", "status = 'ready' OR issued_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_payroll_disbursement_version", "(approved_payroll_version > 0)");
                         });
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantRolePermission", b =>
-                {
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
-                    b.Property<string>("PermissionCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("permission_code");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("RoleId", "PermissionCode");
-
-                    b.HasIndex("PermissionCode");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("tenant_role_permission", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantService", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursementItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2736,9 +2255,139 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<ServiceBillingType>("BillingType")
-                        .HasColumnType("tenant.service_billing_type")
-                        .HasColumnName("billing_type");
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<byte[]>("DestinationAccountCiphertext")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("destination_account_ciphertext");
+
+                    b.Property<string>("DestinationAccountLast4")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("destination_account_last4");
+
+                    b.Property<string>("DestinationBin")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("destination_bin");
+
+                    b.Property<Guid>("GatewayAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_account_id");
+
+                    b.Property<Guid?>("GatewayPayoutItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gateway_payout_item_id");
+
+                    b.Property<Guid>("PayrollDetailId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_detail_id");
+
+                    b.Property<Guid>("PayrollDisbursementId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payroll_disbursement_id");
+
+                    b.Property<string>("RecipientNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recipient_name_snapshot");
+
+                    b.Property<Guid>("StaffUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_user_id");
+
+                    b.Property<PayrollDisbursementItemStatus>("Status")
+                        .HasColumnType("tenant.payroll_disbursement_item_status")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffUserId");
+
+                    b.HasIndex("GatewayAccountId", "GatewayPayoutItemId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payroll_item_gateway")
+                        .HasFilter("gateway_payout_item_id IS NOT NULL");
+
+                    b.HasIndex("TenantId", "PayrollDetailId");
+
+                    b.HasIndex("TenantId", "PayrollDisbursementId", "PayrollDetailId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "PayrollDisbursementId", "Status")
+                        .HasDatabaseName("ix_payroll_item_status");
+
+                    b.ToTable("payroll_disbursement_items", "tenant", t =>
+                        {
+                            t.HasCheckConstraint("ck_payroll_item_amount", "(amount > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Rule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ImportedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("imported_by");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_url");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportedBy");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("rules", "tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Service", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -2752,19 +2401,17 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid>("CreatedByManager")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_manager");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<Guid?>("DeletedBy")
+                    b.Property<Guid?>("DeletedByManager")
                         .HasColumnType("uuid")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
+                        .HasColumnName("deleted_by_manager");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -2778,15 +2425,13 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("name");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("unit");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -2794,99 +2439,31 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<Guid?>("UpdatedBy")
+                    b.Property<Guid?>("UpdatedByManager")
                         .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
+                        .HasColumnName("updated_by_manager");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedByManager");
+
+                    b.HasIndex("DeletedByManager");
+
+                    b.HasIndex("UpdatedByManager");
 
                     b.HasIndex("TenantId", "Code")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.ToTable("tenant_services", "tenant");
+                    b.ToTable("services", "tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStaffProfile", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.StaffTimeSheet", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("BankAccountNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("bank_account_number");
-
-                    b.Property<string>("BankName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("bank_name");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset?>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_of_birth");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BankAccountNumber")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "UserId");
-
-                    b.ToTable("tenant_staff_profiles", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStaffTimeSheet", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<decimal>("ActualWorkingDay")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("actual_working_day");
 
                     b.Property<decimal>("BonusAmount")
                         .HasColumnType("numeric(18,2)")
@@ -2898,13 +2475,9 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<short>("DateMonth")
-                        .HasColumnType("smallint")
-                        .HasColumnName("date_month");
-
-                    b.Property<short>("DateYear")
-                        .HasColumnType("smallint")
-                        .HasColumnName("date_year");
+                    b.Property<Guid>("CreatedByManager")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_manager");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2915,10 +2488,6 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
-
-                    b.Property<decimal>("NightShiftsCount")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("night_shifts_count");
 
                     b.Property<string>("Note")
                         .HasColumnType("text")
@@ -2940,6 +2509,10 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("paid_leave_day");
 
+                    b.Property<DateTimeOffset>("PayrollPeriod")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("payroll_period");
+
                     b.Property<decimal>("PenaltyAmount")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("penalty_amount");
@@ -2951,12 +2524,6 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Property<decimal>("StandardWorkingDay")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("standard_working_day");
-
-                    b.Property<TimeSheetStatus>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tenant.time_sheet_status")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'draft'::tenant.time_sheet_status");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -2974,21 +2541,16 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("TenantId", "Id");
+                    b.HasIndex("CreatedByManager");
 
-                    b.HasIndex("TenantId", "Id")
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("TenantId", "PayrollPeriod", "StaffId")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "StaffId", "DateMonth", "DateYear")
-                        .IsUnique();
-
-                    b.ToTable("tenant_staff_time_sheets", "tenant", t =>
+                    b.ToTable("staff_time_sheets", "tenant", t =>
                         {
-                            t.HasCheckConstraint("CK_tenant_staff_time_sheets_actual_working_day_positive", "actual_working_day >= 0 AND actual_working_day <= 30");
-
                             t.HasCheckConstraint("CK_tenant_staff_time_sheets_bonus_amount_positive", "bonus_amount >= 0");
-
-                            t.HasCheckConstraint("CK_tenant_staff_time_sheets_night_shifts_count_positive", "night_shifts_count >= 0 AND night_shifts_count <= 30");
 
                             t.HasCheckConstraint("CK_tenant_staff_time_sheets_overtime_hour_holiday_positive", "overtime_hour_holiday >= 0");
 
@@ -3003,229 +2565,6 @@ namespace EzCondo.BackEndServer.Migrations
                             t.HasCheckConstraint("CK_tenant_staff_time_sheets_standard_working_day_positive", "standard_working_day >= 0 AND standard_working_day <= 30");
 
                             t.HasCheckConstraint("CK_tenant_staff_time_sheets_unpaid_leave_day_positive", "unpaid_leave_day >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStatusHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset>("ChangedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("changed_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("ChangedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("changed_by");
-
-                    b.Property<TenantStatusEnum>("CurrentStatus")
-                        .HasColumnType("platform.tenant_status_enum")
-                        .HasColumnName("current_status");
-
-                    b.Property<TenantStatusEnum?>("OldStatus")
-                        .HasColumnType("platform.tenant_status_enum")
-                        .HasColumnName("old_status");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("text")
-                        .HasColumnName("reason");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ChangedBy");
-
-                    b.HasIndex("TenantId", "Id")
-                        .IsUnique();
-
-                    b.ToTable("tenant_status_histories", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantUserRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime>("GrantedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("granted_at");
-
-                    b.Property<Guid?>("GrantedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("granted_by");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("revoked_at");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
-                    b.Property<Guid?>("TenantRoleRole")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_role_role");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GrantedBy");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("TenantRoleRole");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("tenant_user_roles", "tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("access_failed_count");
-
-                    b.Property<string>("AvatarUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("avatar_url");
-
-                    b.Property<string>("CitizenId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("citizen_id");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text")
-                        .HasColumnName("concurrency_stamp");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("citext")
-                        .HasColumnName("email");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("email_confirmed");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("full_name");
-
-                    b.Property<DateTimeOffset?>("LastLogInAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_log_in_at");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("lockout_enabled");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("lockout_end");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("normalized_email");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("normalized_user_name");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("text")
-                        .HasColumnName("password_hash");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("phone_number");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("phone_number_confirmed");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("text")
-                        .HasColumnName("security_stamp");
-
-                    b.Property<UserStatusEnum>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("identity.user_status_enum")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'pending'::identity.user_status_enum");
-
-                    b.Property<Guid?>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("two_factor_enabled");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("user_name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique();
-
-                    b.ToTable("users", "identity", t =>
-                        {
-                            t.HasCheckConstraint("CK_users_email_or_phone_number", "email IS NOT NULL OR phone_number IS NOT NULL");
                         });
                 });
 
@@ -3293,920 +2632,800 @@ namespace EzCondo.BackEndServer.Migrations
                     b.ToTable("user_tokens", "identity");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ApartmentContract", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("ApartmentContracts")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Users")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantApartment", "Apartment")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ApartmentId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantResident", "Resident")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ResidentId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Apartment");
-
-                    b.Navigation("Resident");
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ApartmentResident", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("ApartmentResidents")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccounts")
+                        .WithMany("PaymentRequests")
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProviderAccounts");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentTransaction", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", "PaymentRequests")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("ProviderAccountId", "PaymentRequestId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentWebhookEvent", "SourceWebhookEvent")
+                        .WithMany()
+                        .HasForeignKey("ProviderAccountId", "SourceWebhookEventId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PaymentRequests");
+
+                    b.Navigation("ProviderAccount");
+
+                    b.Navigation("SourceWebhookEvent");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentWebhookEvent", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PaymentWebhookEvents")
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", "PaymentRequest")
+                        .WithMany("PaymentWebhookEvents")
+                        .HasForeignKey("ProviderAccountId", "PaymentRequestId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PaymentRequest");
+
+                    b.Navigation("ProviderAccount");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutBatch", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PayoutBatchs")
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProviderAccount");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutItem", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PayoutItems")
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutBatch", "PayoutBatch")
+                        .WithMany("PayoutItems")
+                        .HasForeignKey("ProviderAccountId", "PayoutBatchId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PayoutBatch");
+
+                    b.Navigation("ProviderAccount");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("ProviderAccounts")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantApartment", "Apartment")
-                        .WithMany("ApartmentResidents")
-                        .HasForeignKey("TenantId", "ApartmentId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantResident", "Resident")
-                        .WithMany("ApartmentResidents")
-                        .HasForeignKey("TenantId", "ResidentId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Apartment");
-
-                    b.Navigation("Resident");
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.IncidentAffectedTenant", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.SubscriptionPaymentAllocation", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SystemIncident", "SystemIncident")
-                        .WithMany("IncidentAffectedTenants")
-                        .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("SubscriptionPaymentAllocations")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("IncidentAffectedTenants")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentTransaction", "PaymentTransaction")
+                        .WithMany("SubscriptionPaymentAllocations")
+                        .HasForeignKey("GatewayAccountId", "GatewayTransactionId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("SystemIncident");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPaymentAttempt", "SubscriptionPaymentAttempt")
+                        .WithMany("SubscriptionPaymentAllocations")
+                        .HasForeignKey("GatewayAccountId", "PaymentAttemptId")
+                        .HasPrincipalKey("GatewayAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("Tenant");
+                    b.Navigation("PaymentTransaction");
+
+                    b.Navigation("ProviderAccount");
+
+                    b.Navigation("SubscriptionPaymentAttempt");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.IncidentUpdate", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("IncidentUpdates")
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SystemIncident", "SystemIncident")
-                        .WithMany("IncidentUpdates")
-                        .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SystemIncident");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.KnowledgeDocument", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("KnowledgeDocuments")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("KnowledgeDocuments")
-                        .HasForeignKey("TenantId", "CreatedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformInvitation", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("PlatformInvitations")
-                        .HasForeignKey("InvitedBy")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformRole", "PlatformRole")
-                        .WithMany()
-                        .HasForeignKey("PlatformRoleId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("PlatformRole");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformRolePermission", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformPermission", "PlatformPermission")
-                        .WithMany()
-                        .HasForeignKey("PermissionCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformRole", "PlatformRole")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PlatformPermission");
-
-                    b.Navigation("PlatformRole");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformUserRole", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "GrantedByUser")
-                        .WithMany("PlatformUserRoles")
-                        .HasForeignKey("GrantedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformRole", "PlatformRole")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("GrantedByUser");
-
-                    b.Navigation("PlatformRole");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ResidentComplaint", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.ApartmentResident", null)
-                        .WithMany("ResidentComplaints")
-                        .HasForeignKey("ApartmentResidentId");
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("ResidentComplaints")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.ApartmentResident", "Apartment")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ApartmentId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "CreatedByUser")
-                        .WithMany("CreatedByUser")
-                        .HasForeignKey("TenantId", "CreatedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "ReceivedByUser")
-                        .WithMany("ReceivedByUser")
-                        .HasForeignKey("TenantId", "ReceivedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Apartment");
-
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("ReceivedByUser");
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.Subscription", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SubscriptionPlan", "SubscriptionPlan")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPlan", "Plan")
                         .WithMany("Subscriptions")
                         .HasForeignKey("PlanId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
                         .WithMany("Subscriptions")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("SubscriptionPlan");
+                    b.Navigation("Plan");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionEvent", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Subscription", "Subscription")
-                        .WithMany()
-                        .HasForeignKey("SubscriptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Subscription");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionInvoice", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Subscription", "Subscription")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
                         .WithMany("SubscriptionInvoices")
-                        .HasForeignKey("SubscriptionId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", "Subscription")
+                        .WithMany("SubscriptionInvoices")
+                        .HasForeignKey("TenantId", "SubscriptionId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Subscription");
+
+                    b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentOrder", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPaymentAttempt", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformPaymentProviderConfig", "ProviderConfig")
-                        .WithMany("PaymentOrders")
-                        .HasForeignKey("ProviderConfigId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("SubscriptionPaymentAttempts")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "RequestedByUser")
-                        .WithMany()
-                        .HasForeignKey("RequestedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "RequestedByUser")
+                        .WithMany("SubscriptionPaymentAttempts")
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SubscriptionInvoice", "SubscriptionInvoice")
-                        .WithMany()
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", "SubscriptionInvoice")
+                        .WithMany("SubscriptionPaymentAttempts")
                         .HasForeignKey("SubscriptionInvoiceId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("ProviderConfig");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", "PaymentRequests")
+                        .WithMany("SubscriptionPaymentAttempts")
+                        .HasForeignKey("GatewayAccountId", "GatewayPaymentRequestId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PaymentRequests");
+
+                    b.Navigation("ProviderAccount");
 
                     b.Navigation("RequestedByUser");
 
                     b.Navigation("SubscriptionInvoice");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentTransaction", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPlan", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformPaymentProviderConfig", "ProviderConfig")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("ProviderConfigId")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "AdminCreated")
+                        .WithMany("Created")
+                        .HasForeignKey("CreatedByAdmin")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentOrder", "PaymentOrder")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("ProviderConfigId", "PaymentOrderId")
-                        .HasPrincipalKey("ProviderConfigId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("PaymentOrder");
-
-                    b.Navigation("ProviderConfig");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentWebhookEvent", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.PlatformPaymentProviderConfig", "ProviderConfig")
-                        .WithMany("WebhookEvents")
-                        .HasForeignKey("ProviderConfigId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentOrder", "PaymentOrder")
-                        .WithMany("WebhookEvents")
-                        .HasForeignKey("ProviderConfigId", "PaymentOrderId")
-                        .HasPrincipalKey("ProviderConfigId", "Id")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "AdminDeleted")
+                        .WithMany("Deleted")
+                        .HasForeignKey("DeletedByAdmin")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("PaymentOrder");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "AdminUpdated")
+                        .WithMany("Updated")
+                        .HasForeignKey("UpdatedByAdmin")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("ProviderConfig");
+                    b.Navigation("AdminCreated");
+
+                    b.Navigation("AdminDeleted");
+
+                    b.Navigation("AdminUpdated");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SupportTicket", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("SupportTickets")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Roles")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "ReceiverUser")
-                        .WithMany("ReceiverUser")
-                        .HasForeignKey("TenantId", "ReceiverId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "RequesterUser")
-                        .WithMany("RequesterUser")
-                        .HasForeignKey("TenantId", "RequesterId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("ReceiverUser");
-
-                    b.Navigation("RequesterUser");
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SystemIncident", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.RolePermission", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("SystemIncidents")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.NoAction)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("Scope", "PermissionCode")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("Scope", "RoleId")
+                        .HasPrincipalKey("Scope", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantAiChatMessage", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.UserRole", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantAiChatSession", "TenantAiChatSession")
-                        .WithMany("TenantAiChatMessages")
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "GrantedByUser")
+                        .WithMany("GrantedUserRoles")
+                        .HasForeignKey("GrantedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("UserRoles")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantAiChatSession");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantAiChatSession", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", null)
-                        .WithMany("TenantAiChatSessions")
-                        .HasForeignKey("TenantId1");
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany()
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "User")
+                        .WithMany("UserRoles")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", null)
-                        .WithMany("TenantAiChatSessions")
-                        .HasForeignKey("UserId1");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("Scope", "RoleId")
+                        .HasPrincipalKey("Scope", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GrantedByUser");
+
+                    b.Navigation("Role");
 
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantApartment", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Apartment", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantApartments")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Resident")
+                        .WithMany("Apartments")
+                        .HasForeignKey("ApartmentRenter")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantBuilding", "TenantBuilding")
-                        .WithMany("TenantApartments")
-                        .HasForeignKey("TenantId", "BuildingId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Apartments")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Resident");
 
                     b.Navigation("Tenant");
-
-                    b.Navigation("TenantBuilding");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBillingPeriod", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Complaint", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantBillingPeriods")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Resident")
+                        .WithMany("ComplaintResident")
+                        .HasForeignKey("CreatedByResident")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("TenantBillingPeriods")
-                        .HasForeignKey("TenantId", "CreatedBy")
-                        .HasPrincipalKey("TenantId", "Id")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Staff")
+                        .WithMany("ComplaintStaff")
+                        .HasForeignKey("ReceivedByStaff")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Tenant");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBuilding", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantBuildings")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Complaints")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Resident");
+
+                    b.Navigation("Staff");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvitation", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Contract", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantInvitations")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantRole", "TenantRole")
-                        .WithMany()
-                        .HasForeignKey("TenantRoleId")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "StaffImported")
+                        .WithMany("Contracts")
+                        .HasForeignKey("ImportedBy")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("TenantInvitations")
-                        .HasForeignKey("TenantId", "InvitedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantRole");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvoice", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantInvoices")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Contracts")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", null)
-                        .WithMany("TenantInvoices")
-                        .HasForeignKey("UserId");
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantApartment", "TenantApartment")
-                        .WithMany("TenantInvoices")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Apartment", "Apartment")
+                        .WithMany("Contracts")
                         .HasForeignKey("TenantId", "ApartmentId")
                         .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantResident", "TenantResident")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "BillingContactId")
+                    b.Navigation("Apartment");
+
+                    b.Navigation("StaffImported");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invitation", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "User")
+                        .WithMany("CreatedByUser")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", "Role")
+                        .WithMany("Invitations")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "TargetUser")
+                        .WithMany("TargetUser")
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Invitations")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("TargetUser");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invoice", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "StaffCreated")
+                        .WithMany("CreatedByStaff")
+                        .HasForeignKey("CreatedByStaff")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "StaffDeleted")
+                        .WithMany("DeletedByStaff")
+                        .HasForeignKey("DeletedByStaff")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Invoices")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "StaffUpdated")
+                        .WithMany("UpdatedByStaff")
+                        .HasForeignKey("UpdatedByStaff")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Apartment", "Apartment")
+                        .WithMany("Invoices")
+                        .HasForeignKey("TenantId", "ApartmentId")
                         .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantBillingPeriod", "TenantBillingPeriod")
-                        .WithMany("TenantInvoices")
-                        .HasForeignKey("TenantId", "BillingPeriodId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Apartment");
+
+                    b.Navigation("StaffCreated");
+
+                    b.Navigation("StaffDeleted");
+
+                    b.Navigation("StaffUpdated");
 
                     b.Navigation("Tenant");
-
-                    b.Navigation("TenantApartment");
-
-                    b.Navigation("TenantBillingPeriod");
-
-                    b.Navigation("TenantResident");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvoiceLine", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoiceDetail", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("InvoiceDetails")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantInvoice", "TenantInvoice")
-                        .WithMany("TenantInvoiceLines")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invoice", "Invoice")
+                        .WithMany("InvoiceDetails")
                         .HasForeignKey("TenantId", "InvoiceId")
                         .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantService", "TenantService")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Service", "TenantService")
                         .WithMany("TenantInvoiceLines")
                         .HasForeignKey("TenantId", "ServiceId")
                         .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Tenant");
+                    b.Navigation("Invoice");
 
-                    b.Navigation("TenantInvoice");
+                    b.Navigation("Tenant");
 
                     b.Navigation("TenantService");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentOrder", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAllocation", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("PaymentOrders")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("InvoicePaymentAllocations")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("InvoicePaymentAllocations")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPaymentProviderConfig", "PaymentProviderConfig")
-                        .WithMany("PaymentOrders")
-                        .HasForeignKey("TenantId", "ProviderConfigId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentTransaction", "PaymentTransaction")
+                        .WithMany("InvoicePaymentAllocations")
+                        .HasForeignKey("GatewayAccountId", "GatewayTransactionId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("PaymentOrders")
-                        .HasForeignKey("TenantId", "RequestBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAttempt", "InvoicePaymentAttempt")
+                        .WithMany("InvoicePaymentAllocations")
+                        .HasForeignKey("TenantId", "GatewayAccountId", "PaymentAttemptId")
+                        .HasPrincipalKey("TenantId", "GatewayAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantInvoice", "TenantInvoice")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "TenantInvoiceId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                    b.Navigation("InvoicePaymentAttempt");
 
-                    b.Navigation("PaymentProviderConfig");
+                    b.Navigation("PaymentTransaction");
+
+                    b.Navigation("ProviderAccount");
 
                     b.Navigation("Tenant");
+                });
 
-                    b.Navigation("TenantInvoice");
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAttempt", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("InvoicePaymentAttempts")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "User")
+                        .WithMany("InvoicePaymentAttempts")
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("InvoicePaymentAttempts")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", "PaymentRequest")
+                        .WithMany("InvoicePaymentAttempts")
+                        .HasForeignKey("GatewayAccountId", "GatewayPaymentRequestId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invoice", "Invoice")
+                        .WithMany("InvoicePaymentAttempts")
+                        .HasForeignKey("TenantId", "InvoiceId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("PaymentRequest");
+
+                    b.Navigation("ProviderAccount");
+
+                    b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentProviderConfig", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Payroll", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("PaymentProviderConfigs")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentTransaction", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", null)
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("TenantId1");
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPaymentOrder", null)
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("TenantPaymentOrderId");
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPaymentOrder", "PaymentOrdrer")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "PaymentOrderId")
-                        .HasPrincipalKey("TenantId", "Id")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "ManagerCreated")
+                        .WithMany("Payrolls")
+                        .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("PaymentOrdrer");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Payrolls")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ManagerCreated");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentWebhookEvent", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDetail", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPaymentProviderConfig", "PaymentProviderConfig")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ProviderConfigId")
-                        .HasPrincipalKey("TenantId", "Id")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Staff")
+                        .WithMany("PayrollDetails")
+                        .HasForeignKey("StaffReceive")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("PaymentProviderConfig");
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPayroll", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantPayrolls")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("PayrollDetails")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "ApprovedByUser")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ApprovedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "Manager")
-                        .WithMany("TenantPayrolls")
-                        .HasForeignKey("TenantId", "CreatedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "IssuedByUser")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "IssuedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "RejectedByUser")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "RejectedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "ManagerSubmitted")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "SubmittedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("ApprovedByUser");
-
-                    b.Navigation("IssuedByUser");
-
-                    b.Navigation("Manager");
-
-                    b.Navigation("ManagerSubmitted");
-
-                    b.Navigation("RejectedByUser");
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPayrollDetail", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantPayrollDetails")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPayroll", "TenantPayroll")
-                        .WithMany("TenantPayrollDetails")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Payroll", "Payroll")
+                        .WithMany("PayrollDetails")
                         .HasForeignKey("TenantId", "PayrollId")
                         .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantStaffProfile", "User")
-                        .WithMany("TenantPayrollDetails")
-                        .HasForeignKey("TenantId", "RecipientId")
+                    b.Navigation("Payroll");
+
+                    b.Navigation("Staff");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursement", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "ApprovedByUser")
+                        .WithMany("ApprovedBy")
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PayrollDisbursements")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "IssuedByUser")
+                        .WithMany("IssuedBy")
+                        .HasForeignKey("IssuedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("PayrollDisbursements")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutBatch", "PayoutBatch")
+                        .WithMany("PayrollDisbursements")
+                        .HasForeignKey("GatewayAccountId", "GatewayPayoutBatchId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Payroll", "Payroll")
+                        .WithMany("PayrollDisbursements")
+                        .HasForeignKey("TenantId", "PayrollId")
                         .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("IssuedByUser");
+
+                    b.Navigation("PayoutBatch");
+
+                    b.Navigation("Payroll");
+
+                    b.Navigation("ProviderAccount");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursementItem", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", "ProviderAccount")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("GatewayAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "StaffUser")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("StaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutItem", "PayoutItem")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("GatewayAccountId", "GatewayPayoutItemId")
+                        .HasPrincipalKey("ProviderAccountId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDetail", "PayrollDetail")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("TenantId", "PayrollDetailId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursement", "PayrollDisbursement")
+                        .WithMany("PayrollDisbursementItems")
+                        .HasForeignKey("TenantId", "PayrollDisbursementId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PayoutItem");
+
+                    b.Navigation("PayrollDetail");
+
+                    b.Navigation("PayrollDisbursement");
+
+                    b.Navigation("ProviderAccount");
+
+                    b.Navigation("StaffUser");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Rule", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "TenantOwnerImported")
+                        .WithMany("Rules")
+                        .HasForeignKey("ImportedBy")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantPayroll");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantResident", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantResidents")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Rules")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("TenantResidents")
-                        .HasForeignKey("TenantId", "UserId")
-                        .HasPrincipalKey("TenantId", "Id")
+                    b.Navigation("Tenant");
+
+                    b.Navigation("TenantOwnerImported");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Service", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "ManagerCreated")
+                        .WithMany("CreatedByManager")
+                        .HasForeignKey("CreatedByManager")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Tenant");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantRole", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantRoles")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantRolePermission", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantPermission", "TenantPermission")
-                        .WithMany()
-                        .HasForeignKey("PermissionCode")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantRole", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantPermission");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantService", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantServices")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStaffProfile", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "UserId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStaffTimeSheet", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantStaffProfile", "TenantStaffProfile")
-                        .WithMany("TenantStaffTimeSheets")
-                        .HasForeignKey("TenantId", "StaffId")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantStaffProfile");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStatusHistory", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
-                        .WithMany("TenantStatusHistories")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("TenantId", "ChangedBy")
-                        .HasPrincipalKey("TenantId", "Id")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantUserRole", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "GrantedUser")
-                        .WithMany()
-                        .HasForeignKey("GrantedBy")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "ManagerDeleted")
+                        .WithMany("DeletedByManager")
+                        .HasForeignKey("DeletedByManager")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantRole", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("Services")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.TenantRole", null)
-                        .WithMany("TenantUserRoles")
-                        .HasForeignKey("TenantRoleRole");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "ManagerUpdated")
+                        .WithMany("UpdatedByManager")
+                        .HasForeignKey("UpdatedByManager")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", "User")
-                        .WithMany("TenantUserRoles")
-                        .HasForeignKey("UserId")
+                    b.Navigation("ManagerCreated");
+
+                    b.Navigation("ManagerDeleted");
+
+                    b.Navigation("ManagerUpdated");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.StaffTimeSheet", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Manager")
+                        .WithMany("ManagerCreated")
+                        .HasForeignKey("CreatedByManager")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("GrantedUser");
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "Staff")
+                        .WithMany("Staff")
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
-                    b.Navigation("Role");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.User", b =>
-                {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.Tenant", "Tenant")
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Staff");
 
                     b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", null)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4215,7 +3434,7 @@ namespace EzCondo.BackEndServer.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", null)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4224,197 +3443,241 @@ namespace EzCondo.BackEndServer.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("EzCondo.BackEndServer.Data.Entities.User", null)
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.ApartmentResident", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", b =>
                 {
-                    b.Navigation("ResidentComplaints");
+                    b.Navigation("Apartments");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("ComplaintResident");
+
+                    b.Navigation("ComplaintStaff");
+
+                    b.Navigation("Contracts");
+
+                    b.Navigation("Created");
+
+                    b.Navigation("CreatedByManager");
+
+                    b.Navigation("CreatedByStaff");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Deleted");
+
+                    b.Navigation("DeletedByManager");
+
+                    b.Navigation("DeletedByStaff");
+
+                    b.Navigation("GrantedUserRoles");
+
+                    b.Navigation("InvoicePaymentAttempts");
+
+                    b.Navigation("IssuedBy");
+
+                    b.Navigation("ManagerCreated");
+
+                    b.Navigation("PayrollDetails");
+
+                    b.Navigation("PayrollDisbursementItems");
+
+                    b.Navigation("Payrolls");
+
+                    b.Navigation("Rules");
+
+                    b.Navigation("Staff");
+
+                    b.Navigation("SubscriptionPaymentAttempts");
+
+                    b.Navigation("TargetUser");
+
+                    b.Navigation("Updated");
+
+                    b.Navigation("UpdatedByManager");
+
+                    b.Navigation("UpdatedByStaff");
+
+                    b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.PlatformPaymentProviderConfig", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentRequest", b =>
                 {
-                    b.Navigation("PaymentOrders");
+                    b.Navigation("InvoicePaymentAttempts");
 
                     b.Navigation("PaymentTransactions");
 
-                    b.Navigation("WebhookEvents");
+                    b.Navigation("PaymentWebhookEvents");
+
+                    b.Navigation("SubscriptionPaymentAttempts");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.Subscription", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PaymentTransaction", b =>
+                {
+                    b.Navigation("InvoicePaymentAllocations");
+
+                    b.Navigation("SubscriptionPaymentAllocations");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutBatch", b =>
+                {
+                    b.Navigation("PayoutItems");
+
+                    b.Navigation("PayrollDisbursements");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.PayoutItem", b =>
+                {
+                    b.Navigation("PayrollDisbursementItems");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPayment.ProviderAccount", b =>
+                {
+                    b.Navigation("InvoicePaymentAllocations");
+
+                    b.Navigation("InvoicePaymentAttempts");
+
+                    b.Navigation("PaymentRequests");
+
+                    b.Navigation("PaymentTransactions");
+
+                    b.Navigation("PaymentWebhookEvents");
+
+                    b.Navigation("PayoutBatchs");
+
+                    b.Navigation("PayoutItems");
+
+                    b.Navigation("PayrollDisbursementItems");
+
+                    b.Navigation("PayrollDisbursements");
+
+                    b.Navigation("SubscriptionPaymentAllocations");
+
+                    b.Navigation("SubscriptionPaymentAttempts");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", b =>
                 {
                     b.Navigation("SubscriptionInvoices");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPaymentOrder", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", b =>
                 {
-                    b.Navigation("PaymentTransactions");
-
-                    b.Navigation("WebhookEvents");
+                    b.Navigation("SubscriptionPaymentAttempts");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SubscriptionPlan", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPaymentAttempt", b =>
+                {
+                    b.Navigation("SubscriptionPaymentAllocations");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPlan", b =>
                 {
                     b.Navigation("Subscriptions");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SystemIncident", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", b =>
                 {
-                    b.Navigation("IncidentAffectedTenants");
+                    b.Navigation("Apartments");
 
-                    b.Navigation("IncidentUpdates");
-                });
+                    b.Navigation("Complaints");
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.Tenant", b =>
-                {
-                    b.Navigation("ApartmentContracts");
+                    b.Navigation("Contracts");
 
-                    b.Navigation("ApartmentResidents");
+                    b.Navigation("Invitations");
 
-                    b.Navigation("IncidentAffectedTenants");
+                    b.Navigation("InvoiceDetails");
 
-                    b.Navigation("KnowledgeDocuments");
+                    b.Navigation("InvoicePaymentAllocations");
 
-                    b.Navigation("PaymentOrders");
+                    b.Navigation("InvoicePaymentAttempts");
 
-                    b.Navigation("PaymentProviderConfigs");
+                    b.Navigation("Invoices");
 
-                    b.Navigation("PaymentTransactions");
+                    b.Navigation("PayrollDetails");
 
-                    b.Navigation("ResidentComplaints");
+                    b.Navigation("PayrollDisbursementItems");
+
+                    b.Navigation("PayrollDisbursements");
+
+                    b.Navigation("Payrolls");
+
+                    b.Navigation("ProviderAccounts");
+
+                    b.Navigation("Roles");
+
+                    b.Navigation("Rules");
+
+                    b.Navigation("Services");
+
+                    b.Navigation("SubscriptionInvoices");
 
                     b.Navigation("Subscriptions");
 
-                    b.Navigation("SupportTickets");
+                    b.Navigation("UserRoles");
 
-                    b.Navigation("TenantAiChatSessions");
-
-                    b.Navigation("TenantApartments");
-
-                    b.Navigation("TenantBillingPeriods");
-
-                    b.Navigation("TenantBuildings");
-
-                    b.Navigation("TenantInvitations");
-
-                    b.Navigation("TenantInvoices");
-
-                    b.Navigation("TenantPayrollDetails");
-
-                    b.Navigation("TenantPayrolls");
-
-                    b.Navigation("TenantResidents");
-
-                    b.Navigation("TenantRoles");
-
-                    b.Navigation("TenantServices");
-
-                    b.Navigation("TenantStatusHistories");
+                    b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantAiChatSession", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Permission", b =>
                 {
-                    b.Navigation("TenantAiChatMessages");
+                    b.Navigation("RolePermissions");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantApartment", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", b =>
                 {
-                    b.Navigation("ApartmentResidents");
+                    b.Navigation("Invitations");
 
-                    b.Navigation("TenantInvoices");
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBillingPeriod", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Apartment", b =>
                 {
-                    b.Navigation("TenantInvoices");
+                    b.Navigation("Contracts");
+
+                    b.Navigation("Invoices");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantBuilding", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Invoice", b =>
                 {
-                    b.Navigation("TenantApartments");
+                    b.Navigation("InvoiceDetails");
+
+                    b.Navigation("InvoicePaymentAttempts");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantInvoice", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.InvoicePaymentAttempt", b =>
                 {
-                    b.Navigation("TenantInvoiceLines");
+                    b.Navigation("InvoicePaymentAllocations");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentOrder", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Payroll", b =>
                 {
-                    b.Navigation("PaymentTransactions");
+                    b.Navigation("PayrollDetails");
+
+                    b.Navigation("PayrollDisbursements");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPaymentProviderConfig", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDetail", b =>
                 {
-                    b.Navigation("PaymentOrders");
+                    b.Navigation("PayrollDisbursementItems");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantPayroll", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.PayrollDisbursement", b =>
                 {
-                    b.Navigation("TenantPayrollDetails");
+                    b.Navigation("PayrollDisbursementItems");
                 });
 
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantResident", b =>
-                {
-                    b.Navigation("ApartmentResidents");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantRole", b =>
-                {
-                    b.Navigation("TenantUserRoles");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantService", b =>
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaTenant.Service", b =>
                 {
                     b.Navigation("TenantInvoiceLines");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.TenantStaffProfile", b =>
-                {
-                    b.Navigation("TenantPayrollDetails");
-
-                    b.Navigation("TenantStaffTimeSheets");
-                });
-
-            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.User", b =>
-                {
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("IncidentUpdates");
-
-                    b.Navigation("KnowledgeDocuments");
-
-                    b.Navigation("PaymentOrders");
-
-                    b.Navigation("PlatformInvitations");
-
-                    b.Navigation("PlatformUserRoles");
-
-                    b.Navigation("ReceivedByUser");
-
-                    b.Navigation("ReceiverUser");
-
-                    b.Navigation("RequesterUser");
-
-                    b.Navigation("SystemIncidents");
-
-                    b.Navigation("TenantAiChatSessions");
-
-                    b.Navigation("TenantBillingPeriods");
-
-                    b.Navigation("TenantInvitations");
-
-                    b.Navigation("TenantInvoices");
-
-                    b.Navigation("TenantPayrolls");
-
-                    b.Navigation("TenantResidents");
-
-                    b.Navigation("TenantUserRoles");
                 });
 #pragma warning restore 612, 618
         }

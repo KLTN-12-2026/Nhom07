@@ -2,23 +2,16 @@
 
 namespace EzCondo.BackEndServer.Data.Enums
 {
-	public enum PaymentOrderStatus
+	public enum InvoicePaymentAttemptStatus
 	{
 		[PgName("pending")]
 		Pending,
-
-		[PgName("underpaid")]
-		Underpaid,
-
+		[PgName("partially_paid")]
+		Partially_paid,
 		[PgName("paid")]
 		Paid,
-
 		[PgName("cancelled")]
 		Cancelled,
-
-		[PgName("expired")]
-		Expired,
-
 		[PgName("failed")]
 		Failed
 	}

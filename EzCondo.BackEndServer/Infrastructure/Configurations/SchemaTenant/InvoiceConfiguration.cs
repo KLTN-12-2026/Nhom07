@@ -21,7 +21,6 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.Property(x => x.Status)
 				.HasColumnType("tenant.tenant_invoice_status")
-				.HasDefaultValueSql("'draft'::tenant.tenant_invoice_status")
 				.IsRequired();
 
 			b.Property(x => x.PublishedAt)
@@ -35,7 +34,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 				.HasColumnType("numeric(18,2)")
 				.IsRequired();
 
-			b.Property(x => x.PaymentDealineAt)
+			b.Property(x => x.PaymentDeadlineAt)
 				.HasColumnType("timestamptz")
 				.IsRequired();
 
@@ -45,7 +44,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Invoices)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.Apartment)
 				.WithMany(x => x.Invoices)
@@ -55,45 +54,18 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.HasOne(x => x.StaffCreated)
 				.WithMany(x => x.CreatedByStaff)
-				.HasForeignKey(x => new { x.TenantId, x.CreatedByStaff })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.CreatedByStaff)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.StaffUpdated)
 				.WithMany(x => x.UpdatedByStaff)
-				.HasForeignKey(x => new { x.TenantId, x.UpdatedByStaff })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.UpdatedByStaff)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.StaffDeleted)
 				.WithMany(x => x.DeletedByStaff)
-				.HasForeignKey(x => new { x.TenantId, x.DeletedByStaff})
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.DeletedByStaff)
 				.OnDelete(DeleteBehavior.NoAction);
-
-			b.HasOne(x => x.ResidentPaid)
-				.WithMany(x => x.PaidByResident)
-				.HasForeignKey(x => new { x.TenantId, x.PaidByResident})
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
-				.OnDelete(DeleteBehavior.NoAction);
-
-			b.HasIndex(x => new { x.TenantId, x.InvoiceNo, x.Id })
-				.IsUnique();
-
-			b.ToTable(x =>
-			{
-				x.HasCheckConstraint(
-					"CK_tenant_invoices_subtotal_amount_positive",
-					"subtotal_amount >= 0"
-					);
-
-				x.HasCheckConstraint(
-					"CK_tenant_invoices_paid_le_total",
-					"paid_amount <= total_amount"
-					);
-
-				//Cấu hình trong BE: payroll.total_amount = SUM(detail.net_pay)
-			});
 
 			b.HasIndex(x => new { x.TenantId, x.InvoiceNo })
 				.IsUnique();

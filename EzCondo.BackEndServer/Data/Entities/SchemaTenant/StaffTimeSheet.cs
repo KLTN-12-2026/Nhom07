@@ -27,8 +27,8 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public Guid StaffId { get; set; }
 		public Guid TenantId { get; set; }
 
-		public Tenant Tenant { get; set; }
-		public User Manager { get; set; }
-		public User Staff { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public User Manager { get; set; } = null!;
+		public User Staff { get; set; } = null!;
 	}
 }

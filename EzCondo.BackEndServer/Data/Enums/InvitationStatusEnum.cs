@@ -7,6 +7,10 @@ namespace EzCondo.BackEndServer.Data.Enums
 		[PgName("accepted")]
 		Accepted,
 		[PgName("sent")]
-		Sent
+		Sent,
+		[PgName("revoked")]
+		Revoked,
+		[PgName("expired")]
+		Expired
 	}
 }

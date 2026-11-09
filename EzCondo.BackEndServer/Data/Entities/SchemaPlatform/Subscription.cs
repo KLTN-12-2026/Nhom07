@@ -5,10 +5,17 @@
 		public Guid Id { get; set; }
 		public Guid TenantId { get; set; }
 		public Guid PlanId { get; set; }
-		public int BillingCycleMonth { get; set; }
-		public DateTimeOffset RegisteredAt { get; set; }
+		public int BillingCycleMonthsSnapshot { get; set; }
+		public EzCondo.BackEndServer.Data.Enums.SubscriptionStatusEnum Status { get; set; }
+			= EzCondo.BackEndServer.Data.Enums.SubscriptionStatusEnum.Trial;
+		public DateOnly StartsAt { get; set; }
+		public DateOnly EndsAt { get; set; }
+		public DateTimeOffset? CancelledAt { get; set; }
 
-		public Tenant Tenant { get; set; }
-		public SubscriptionPlan Plan { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public SubscriptionPlan Plan { get; set; } = null!;
+
+		public ICollection<SubscriptionInvoice> SubscriptionInvoices { get; set; } = new List<SubscriptionInvoice>();
+
 	}
 }

@@ -69,5 +69,22 @@ namespace EzCondo.BackEndServer.Controllers
 
 			return NoContent();
 		}
+
+		[HttpPost("{id:guid}/discontinue")]
+		public async Task<ActionResult<SubscriptionPlanResponse>> Discontinue(
+			Guid id,
+			CancellationToken cancellationToken)
+		{
+			var result = await subscriptionService.DiscontinueAsync(
+				id,
+				cancellationToken);
+
+			if(result is null)
+			{
+				return NotFound();
+			}
+
+			return Ok(result);
+		}
 	}
 }

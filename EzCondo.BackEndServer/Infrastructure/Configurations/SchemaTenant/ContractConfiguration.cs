@@ -17,22 +17,19 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.Property(x => x.ContractNo).HasMaxLength(80).IsRequired();
 			b.Property(x => x.ContractUrl).HasColumnType("text");
-			b.Property(x => x.TenantId).IsRequired();
 			b.Property(x => x.StartsAt).HasColumnType("timestamptz").IsRequired();
 			b.Property(x => x.EndsAt).HasColumnType("timestamptz").IsRequired();
 			b.Property(x => x.TenantId).IsRequired();
 
-			b.HasIndex(x => new { x.TenantId, x.ContractNo, x.Id }).IsUnique();
-
 			b.ToTable(t => t.HasCheckConstraint(
-				"contracts_ends_at_le_starts_at",
+				"ck_contracts_period",
 				"ends_at > starts_at"
 			));
 
 			b.HasOne(x => x.Tenant)
 				.WithMany(t => t.Contracts)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.Apartment)
 				.WithMany(x => x.Contracts)
@@ -42,8 +39,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.HasOne(x => x.StaffImported)
 				.WithMany(x => x.Contracts)
-				.HasForeignKey(x => new { x.TenantId, x.ImportedBy })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.ImportedBy)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasIndex(x => new { x.TenantId, x.ContractNo })

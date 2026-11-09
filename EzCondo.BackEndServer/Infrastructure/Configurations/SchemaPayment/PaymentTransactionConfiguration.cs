@@ -37,19 +37,13 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 				.HasDefaultValueSql("'{}'::jsonb")
 				.IsRequired();
 
-			b.ToTable(x => x.HasCheckConstraint(
-				"CK_payment_transactions_amount",
-				"amount > 0"
-				));
-
 			b.Property(x => x.Currency)
 				.HasColumnType("char(3)")
-				.HasDefaultValue("'VND'")
+				.HasDefaultValue("VND")
 				.IsRequired();
 
 			b.Property(x => x.Status)
 				.HasColumnType("payment.payment_transaction_status")
-				.HasDefaultValueSql("'received'::payment.payment_transaction_status")
 				.IsRequired();
 
 			b.HasOne(x => x.ProviderAccount)
@@ -62,6 +56,20 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 				.HasForeignKey(x => new { x.ProviderAccountId, x.PaymentRequestId })
 				.HasPrincipalKey(x => new { x.ProviderAccountId, x.Id })
 				.OnDelete(DeleteBehavior.Restrict);
+
+			b.HasOne(x => x.SourceWebhookEvent)
+			.WithMany()
+			.HasForeignKey(x => new
+			{
+				x.ProviderAccountId,
+				x.SourceWebhookEventId
+			})
+			.HasPrincipalKey(x => new
+			{
+				x.ProviderAccountId,
+				x.Id
+			})
+			.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasIndex(x => new { x.ProviderAccountId, x.Id })
 				.IsUnique();
@@ -79,12 +87,12 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 			b.ToTable(x =>
 			{
 				x.HasCheckConstraint(
-					"ck_pyment_transaction_amount",
-					"CHECK (amount > 0)"
+					"ck_payment_transaction_amount",
+					"(amount > 0)"
 				);
 
 				x.HasCheckConstraint(
-					"ck_pyment_transaction_verified",
+					"ck_payment_transaction_verified",
 					"status <> 'verified' OR payment_request_id IS NOT NULL"
 				);
 			});

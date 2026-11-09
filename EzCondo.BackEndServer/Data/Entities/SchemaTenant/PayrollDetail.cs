@@ -13,8 +13,11 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public Guid PayrollId { get; set; }
 		public Guid TenantId { get; set; }
 
-		public Tenant Tenant { get; set; }
-		public User Staff { get; set; }
-		public Payroll Payroll { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public User Staff { get; set; } = null!;
+		public Payroll Payroll { get; set; } = null!;
+
+		public ICollection<PayrollDisbursementItem> PayrollDisbursementItems { get; set; } = new List<PayrollDisbursementItem>();
+
 	}
 }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 {
 	internal sealed class InvitationConfiguration()
-		: EntityConfigurationBase<Invitation>("tenant_invitations", "tenant")
+		: EntityConfigurationBase<Invitation>("invitations", "tenant")
 	{
 		protected override void ConfigureEntity(EntityTypeBuilder<Invitation> b)
 		{
@@ -39,24 +39,21 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Invitations)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.Role)
 				.WithMany(x => x.Invitations)
-				.HasForeignKey(x => new {x.TenantId, x.RoleId })
-				.HasPrincipalKey(x => new {x.TenantId, x.Id})
+				.HasForeignKey(x => x.RoleId)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.User)
 				.WithMany(x => x.CreatedByUser)
-				.HasForeignKey(x => new { x.TenantId, x.CreatedBy })
-				.HasPrincipalKey(x => new {x.TenantId, x.Id})
+				.HasForeignKey(x => x.CreatedBy)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.TargetUser)
 				.WithMany(x => x.TargetUser)
-				.HasForeignKey(x => new { x.TenantId, x.TargetUserId })
-				.HasPrincipalKey(x => new { x.TenantId, x.Id })
+				.HasForeignKey(x => x.TargetUserId)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasIndex(x => x.TokenHash)
@@ -66,11 +63,25 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.HasIndex(x => new { x.TenantId, x.Email, x.RoleId })
 				.HasDatabaseName("ix_invitations_active")
+				.IsUnique()
 				.HasFilter("status = 'sent' AND is_deleted = false");
 
 			b.HasIndex(x => new { x.Status, x.ExpiresAt })
 				.HasDatabaseName("ix_invitations_expiring")
 				.HasFilter("status = 'sent'");
+
+			b.ToTable(t =>
+			{
+				t.HasCheckConstraint(
+					"ck_invitations_accepted",
+					"status <> 'accepted' OR accepted_at IS NOT NULL");
+				t.HasCheckConstraint(
+					"ck_invitations_revoked",
+					"status <> 'revoked' OR revoked_at IS NOT NULL");
+				t.HasCheckConstraint(
+					"ck_invitations_expiry",
+					"expires_at > created_at");
+			});
 		}
 	}
 }

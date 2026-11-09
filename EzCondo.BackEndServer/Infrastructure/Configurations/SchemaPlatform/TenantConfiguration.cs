@@ -33,8 +33,16 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 				.HasMaxLength(30)
 				.IsRequired();
 
-			b.HasIndex(x => new { x.Code, x.TaxCode, x.Slug})
-				.IsUnique();
+			b.Property(x => x.Status)
+				.HasColumnType("platform.tenant_status_enum")
+				.IsRequired();
+
+			b.Property(x => x.TrialEndsAt)
+				.HasColumnType("timestamptz");
+
+			b.HasIndex(x => x.Code).IsUnique();
+			b.HasIndex(x => x.TaxCode).IsUnique();
+			b.HasIndex(x => x.Slug).IsUnique();
 
 			b.ToTable(x =>
 			{
@@ -42,6 +50,10 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 					"CK_tenants_slug_format",
 					"slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'"
 					);
+
+				x.HasCheckConstraint(
+					"ck_tenants_trial",
+					"status <> 'trial' OR trial_ends_at IS NOT NULL");
 			});
 		}
 	}

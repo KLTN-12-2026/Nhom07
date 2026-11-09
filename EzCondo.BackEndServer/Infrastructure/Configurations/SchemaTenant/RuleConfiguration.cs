@@ -22,17 +22,14 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 				.HasColumnType("text")
 				.IsRequired();
 
-			b.HasIndex(x => new { x.TenantId, x.Id, x.ImportedBy }).IsUnique();
-
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Rules)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.TenantOwnerImported)
 				.WithMany(x => x.Rules)
-				.HasForeignKey(x => new { x.TenantId, x.ImportedBy })
-				.HasPrincipalKey(x => new {x.TenantId, x.Id})
+				.HasForeignKey(x => x.ImportedBy)
 				.OnDelete(DeleteBehavior.NoAction);
 		}
 	}

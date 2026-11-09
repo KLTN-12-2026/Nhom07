@@ -7,8 +7,8 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 	public class Service : ISoftDeletableEntity, IAuditableEntity
 	{
 		public Guid Id { get; set; }
-		public string Code { get; set; }
-		public string Name { get; set; }
+		public string Code { get; set; } = null!;
+		public string Name { get; set; } = null!;
 		public decimal Price { get; set; }
 
 		public Guid CreatedByManager { get; set; }
@@ -21,8 +21,8 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public DateTimeOffset CreatedAt { get; set; }
 		public DateTimeOffset? UpdatedAt { get; set; }
 		
-		public Tenant Tenant { get; set; }
-		public User ManagerCreated { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public User ManagerCreated { get; set; } = null!;
 		public User? ManagerUpdated { get; set; }
 		public User? ManagerDeleted { get; set; }
 

@@ -1,21 +1,20 @@
 ﻿using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
-using EzCondo.BackEndServer.Data.Enums;
 using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
+using EzCondo.BackEndServer.Data.Enums;
 
 namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 {
 	public class Invoice : ISoftDeletableEntity, IAuditableEntity
 	{
 		public Guid Id { get; set; }
-		public string InvoiceNo { get; set; }
-		public TenantInvoiceStatus Status { get; set; }
+		public string InvoiceNo { get; set; } = null!;
+		public TenantInvoiceStatus Status { get; set; } = TenantInvoiceStatus.Draft;
 		public DateTimeOffset? PublishedAt { get; set; }
 		public DateTimeOffset BillingPeriod { get; set; }
-		public DateTimeOffset PaymentDealineAt { get; set; }
+		public DateTimeOffset PaymentDeadlineAt { get; set; }
 		public decimal TotalAmount { get; set; }
 		public string? Note { get; set; }
 
-		public Guid? PaidByResident { get; set; }
 		public Guid? DeletedByStaff { get; set; }
 		public Guid? UpdatedByStaff { get; set; }
 		public Guid CreatedByStaff { get; set; }
@@ -27,15 +26,15 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public DateTimeOffset CreatedAt { get; set; }
 		public DateTimeOffset? UpdatedAt { get; set; }
 
-		public Tenant Tenant { get; set; }//
-		public Apartment Apartment { get; set; }//
-		public User StaffCreated { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public Apartment Apartment { get; set; } = null!;
+		public User StaffCreated { get; set; } = null!;
 		public User? StaffUpdated{ get; set; }
 		public User? StaffDeleted { get; set; }
-		public User? ResidentPaid { get; set; }
 
 
 		public ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+		public ICollection<InvoicePaymentAttempt> InvoicePaymentAttempts { get; set; } = new List<InvoicePaymentAttempt>();
 
 	}
 }

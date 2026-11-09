@@ -1,18 +1,19 @@
-﻿using EzCondo.BackEndServer.Contracts.SubscriptionPlans;
-using EzCondo.BackEndServer.Data;
-using EzCondo.BackEndServer.Data.Entities;
-using EzCondo.ViewModel.Contents;
-using Microsoft.AspNetCore.Authentication.BearerToken;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text.Json;
+using EzCondo.BackEndServer.Contracts.SubscriptionPlans;
+using EzCondo.BackEndServer.Data;
+using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
+using Microsoft.EntityFrameworkCore;
 
 namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 {
-	public sealed class SubscriptionPlanService(ApplicationDbContext dbcontext) 
+	public sealed class SubscriptionPlanService(
+		ApplicationDbContext dbcontext,
+		IHttpContextAccessor httpContextAccessor)
 		: ISubscriptionPlanService
 	{
 		public async Task<SubscriptionPlanResponse> CreateAsync(
-			CreateSubscriptionPlanRequest request, 
+			CreateSubscriptionPlanRequest request,
 			CancellationToken cancellationToken = default)
 		{
 			ArgumentNullException.ThrowIfNull(request);
@@ -20,75 +21,46 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 			var subscriptionPlan = new SubscriptionPlan
 			{
 				Name = request.Name.Trim(),
-
 				Description = string.IsNullOrWhiteSpace(request.Description)
-				? null
-				: request.Description.Trim(),
-
+					? null
+					: request.Description.Trim(),
 				BillingCycleMonths = request.BillingCycleMonths,
 				Price = request.Price,
-
 				FeatureLimits = request.FeatureLimits?.GetRawText() ?? "{}",
-
-				IsAvailable = request.IsAvailable
+				IsAvailable = request.IsAvailable,
+				CreatedByAdmin = GetCurrentUserId()
 			};
 
 			dbcontext.SubscriptionPlans.Add(subscriptionPlan);
-
 			await dbcontext.SaveChangesAsync(cancellationToken);
-
 			return ToResponse(subscriptionPlan);
-		}
-
-		private static SubscriptionPlanResponse ToResponse(SubscriptionPlan subscriptionPlan)
-		{
-			using var document = JsonDocument.Parse(subscriptionPlan.FeatureLimits);
-
-			var featureLimits = document.RootElement.Clone();
-
-			return new SubscriptionPlanResponse(
-				subscriptionPlan.Id,
-				subscriptionPlan.Name,
-				subscriptionPlan.Description,
-				subscriptionPlan.BillingCycleMonths,
-				subscriptionPlan.Price,
-				featureLimits,
-				subscriptionPlan.IsAvailable,
-				subscriptionPlan.CreatedAt,
-				subscriptionPlan.UpdatedAt
-				);
 		}
 
 		public async Task<SubscriptionPlanResponse?> UpdateAsync(
 			Guid id,
-			UpdateSubscriptionPlanRequest request, 
+			UpdateSubscriptionPlanRequest request,
 			CancellationToken cancellationToken = default)
 		{
 			ArgumentNullException.ThrowIfNull(request);
 
 			var subscriptionPlan = await dbcontext.SubscriptionPlans
-				.SingleOrDefaultAsync(
-				x => x.Id == id && !x.IsDeleted,
-				cancellationToken);
+				.SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
 
-			if (subscriptionPlan is null)
+			if(subscriptionPlan is null)
 			{
 				return null;
 			}
 
 			subscriptionPlan.Name = request.Name.Trim();
-
 			subscriptionPlan.Description = string.IsNullOrWhiteSpace(request.Description)
 				? null
 				: request.Description.Trim();
-
 			subscriptionPlan.Price = request.Price;
 			subscriptionPlan.FeatureLimits = request.FeatureLimits?.GetRawText() ?? "{}";
 			subscriptionPlan.IsAvailable = request.IsAvailable;
-			subscriptionPlan.UpdatedAt = DateTimeOffset.UtcNow;
+			subscriptionPlan.UpdatedByAdmin = GetCurrentUserId();
 
 			await dbcontext.SaveChangesAsync(cancellationToken);
-
 			return ToResponse(subscriptionPlan);
 		}
 
@@ -96,23 +68,20 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 			CancellationToken cancellationToken = default)
 		{
 			var subscriptionPlans = await dbcontext.SubscriptionPlans
-				.AsNoTracking() //Chỉ đọc
+				.AsNoTracking()
 				.Where(x => !x.IsDeleted)
 				.OrderBy(x => x.Name)
 				.ToListAsync(cancellationToken);
 
-			return subscriptionPlans
-				.Select(ToResponse)
-				.ToList();
+			return subscriptionPlans.Select(ToResponse).ToList();
 		}
 
-		public async Task<bool> DeleteAsync(Guid id, 
+		public async Task<bool> DeleteAsync(
+			Guid id,
 			CancellationToken cancellationToken = default)
 		{
 			var subscriptionPlan = await dbcontext.SubscriptionPlans
-				.SingleOrDefaultAsync(
-				x => x.Id == id && !x.IsDeleted,
-				cancellationToken);
+				.SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
 
 			if(subscriptionPlan is null)
 			{
@@ -121,12 +90,56 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 
 			subscriptionPlan.IsDeleted = true;
 			subscriptionPlan.IsAvailable = false;
-			subscriptionPlan.DeletedAt = DateTimeOffset.UtcNow;
-			subscriptionPlan.UpdatedAt = DateTimeOffset.UtcNow;
-
+			subscriptionPlan.DeletedByAdmin = GetCurrentUserId();
 			await dbcontext.SaveChangesAsync(cancellationToken);
-
 			return true;
+		}
+
+		public async Task<SubscriptionPlanResponse?> DiscontinueAsync(
+			Guid id,
+			CancellationToken cancellationToken = default)
+		{
+			var subscriptionPlan = await dbcontext.SubscriptionPlans
+				.SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+			if(subscriptionPlan is null)
+			{
+				return null;
+			}
+
+			if(subscriptionPlan.IsAvailable)
+			{
+				subscriptionPlan.IsAvailable = false;
+				subscriptionPlan.UpdatedByAdmin = GetCurrentUserId();
+				await dbcontext.SaveChangesAsync(cancellationToken);
+			}
+
+			return ToResponse(subscriptionPlan);
+		}
+
+		private Guid GetCurrentUserId()
+		{
+			var value = httpContextAccessor.HttpContext?.User
+				.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			return Guid.TryParse(value, out var userId)
+				? userId
+				: throw new UnauthorizedAccessException("Không xác định được tài khoản Platform hiện tại.");
+		}
+
+		private static SubscriptionPlanResponse ToResponse(SubscriptionPlan subscriptionPlan)
+		{
+			using var document = JsonDocument.Parse(subscriptionPlan.FeatureLimits);
+			return new SubscriptionPlanResponse(
+				subscriptionPlan.Id,
+				subscriptionPlan.Name,
+				subscriptionPlan.Description,
+				subscriptionPlan.BillingCycleMonths,
+				subscriptionPlan.Price,
+				document.RootElement.Clone(),
+				subscriptionPlan.IsAvailable,
+				subscriptionPlan.CreatedAt,
+				subscriptionPlan.UpdatedAt);
 		}
 	}
 }

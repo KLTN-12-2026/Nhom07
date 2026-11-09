@@ -2,13 +2,13 @@
 
 namespace EzCondo.BackEndServer.Data.Entities.SchemaSecurity
 {
-	public class Permission
+	public sealed class Permission
 	{
-		public string Code { get; set; }//key
-		public string Description { get; set; }
 		public RoleScopeEnum Scope { get; set; }
-		public bool IsDeleted { get; set; }
+		public string Code { get; set; } = null!;
+		public string Description { get; set; } = null!;
 
 		public ICollection<RolePermission> RolePermissions { get; set; }
+			= new List<RolePermission>();
 	}
 }

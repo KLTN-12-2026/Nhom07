@@ -2,13 +2,13 @@
 
 namespace EzCondo.BackEndServer.Data.Entities.SchemaSecurity
 {
-	public class RolePermission
+	public sealed class RolePermission
 	{
-		public Guid RoleId { get; set; }
-		public string PermissionCode { get; set; } //Khóa ngoại đến Code của Permission
 		public RoleScopeEnum Scope { get; set; }
+		public Guid RoleId { get; set; }
+		public string PermissionCode { get; set; } = null!;
 
-		public Role Role { get; set; }
-		public Permission Permission { get; set; }
+		public Role Role { get; set; } = null!;
+		public Permission Permission { get; set; } = null!;
 	}
 }

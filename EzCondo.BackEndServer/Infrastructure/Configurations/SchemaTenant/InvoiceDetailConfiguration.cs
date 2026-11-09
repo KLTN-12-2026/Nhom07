@@ -32,7 +32,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 				.WithMany(x => x.InvoiceDetails)
 				.HasForeignKey(x => new {x.TenantId, x.InvoiceId})
 				.HasPrincipalKey(x=> new {x.TenantId, x.Id})
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.TenantService)
 				.WithMany(x => x.TenantInvoiceLines)
@@ -43,7 +43,14 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.InvoiceDetails)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
+
+			b.ToTable(t =>
+			{
+				t.HasCheckConstraint("ck_invoice_details_quantity", "quantity > 0");
+				t.HasCheckConstraint("ck_invoice_details_unit_price", "unit_price >= 0");
+				t.HasCheckConstraint("ck_invoice_details_amount", "amount >= 0 AND amount = quantity * unit_price");
+			});
 		}
 	}
 }

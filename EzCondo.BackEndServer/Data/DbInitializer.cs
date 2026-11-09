@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-using EzCondo.BackEndServer.Data.Entities;
+using EzCondo.BackEndServer.Data.Entities.SchemaSecurity;
+using EzCondo.BackEndServer.Data.Enums;
 
 namespace EzCondo.BackEndServer.Data
 {
@@ -60,23 +61,11 @@ namespace EzCondo.BackEndServer.Data
 
 		public async Task SeedTenantDefaultsAsync(Guid tenantId, CancellationToken cancellationToken = default)
 		{
-			ValidateSeedDefinitions();
-
 			await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-			await AcquireSeederLockAsync(cancellationToken);
-
-			var tenantExists = await _context.Tenants.AnyAsync(x => x.Id == tenantId, cancellationToken);
-
-			if (!tenantExists)
-			{
-				throw new InvalidOperationException($"Cannot seed default roles because tenant '{tenantId}' does not exist.");
-			}
-
-			await UpsertTenantPermissionAsync(cancellationToken);
-			await SeedTenantRolesCoreAsync(tenantId, cancellationToken);
-
-			await _context.SaveChangesAsync(cancellationToken);
+			await SeedTenantDefaultCurrentTransactionAsync(
+				tenantId,
+				cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
 
 			_logger.LogInformation(
@@ -84,9 +73,37 @@ namespace EzCondo.BackEndServer.Data
 				tenantId);
 		}
 
+		public async Task SeedTenantDefaultCurrentTransactionAsync(
+			Guid tenantId,
+			CancellationToken cancellationToken = default)
+		{
+			if(_context.Database.CurrentTransaction is null)
+			{
+				throw new InvalidOperationException(
+					"An active database transaction is required to seed tenant defaults.");
+			}
+
+			ValidateSeedDefinitions();
+			await AcquireSeederLockAsync(cancellationToken);
+
+			var tenantExists = await _context.Tenants
+				.AnyAsync(x => x.Id == tenantId, cancellationToken);
+
+			if(!tenantExists)
+			{
+				throw new InvalidOperationException(
+					$"Cannot seed default roles because tenant '{tenantId}' does not exist.");
+			}
+
+			await UpsertTenantPermissionAsync(cancellationToken);
+			await SeedTenantRolesCoreAsync(tenantId, cancellationToken);
+			await _context.SaveChangesAsync(cancellationToken);
+		}
+
 		private async Task UpsertPlatformPermissionAsync(CancellationToken cancellationToken)
 		{
-			var existingPermissions = await _context.PlatformPermissions
+			var existingPermissions = await _context.Permissions
+				.Where(x => x.Scope == RoleScopeEnum.Platform)
 				.ToDictionaryAsync(x => x.Code, cancellationToken);
 
 			foreach(var seed in PlatformPermissionSeeds)
@@ -97,8 +114,9 @@ namespace EzCondo.BackEndServer.Data
 					continue;
 				}
 
-				_context.PlatformPermissions.Add(new PlatformPermission
+				_context.Permissions.Add(new Permission
 				{
+					Scope = RoleScopeEnum.Platform,
 					Code = seed.Code,
 					Description = seed.Description
 				});
@@ -107,7 +125,8 @@ namespace EzCondo.BackEndServer.Data
 
 		private async Task UpsertTenantPermissionAsync(CancellationToken cancellationToken)
 		{
-			var existingPermissions = await _context.TenantPermissions
+			var existingPermissions = await _context.Permissions
+				.Where(x => x.Scope == RoleScopeEnum.Tenant)
 				.ToDictionaryAsync(x => x.Code, cancellationToken);
 
 			foreach(var seed in TenantPermissionSeeds)
@@ -118,8 +137,9 @@ namespace EzCondo.BackEndServer.Data
 					continue;
 				}
 
-				_context.TenantPermissions.Add(new Permission
+				_context.Permissions.Add(new Permission
 				{
+					Scope = RoleScopeEnum.Tenant,
 					Code = seed.Code,
 					Description = seed.Description
 				});
@@ -128,39 +148,57 @@ namespace EzCondo.BackEndServer.Data
 
 		private async Task SeedPlatformAdminRoleAsync(CancellationToken cancellationToken)
 		{
-			var role = await _context.PlatformRoles
-				.SingleOrDefaultAsync(
-				x => x.Code == PlatformAdminRoleCode,
+			var role = await _context.Roles
+				.OrderBy(x => x.IsDeleted)
+				.FirstOrDefaultAsync(
+				x => x.Scope == RoleScopeEnum.Platform &&
+					x.TenantId == null &&
+					x.Code == PlatformAdminRoleCode,
 				cancellationToken);
 
 			if(role is null)
 			{
-				role = new PlatformRole
+				role = new Role
 				{
 					Id = Guid.NewGuid(),
+					Scope = RoleScopeEnum.Platform,
+					TenantId = null,
 					Code = PlatformAdminRoleCode,
 					Name = "Quản trị viên nền tảng",
 					IsSystem = true,
-					CreatedAt = DateTimeOffset.UtcNow
+					IsDeleted = false
 				};
 
-				_context.PlatformRoles.Add(role);
+				_context.Roles.Add(role);
+			}
+			else
+			{
+				role.Name = "Quản trị viên nền tảng";
+				role.IsSystem = true;
+				role.IsDeleted = false;
 			}
 
-			var assignedPermissionCodeList = await _context.PlatformRolePermissions
-				.Where(x => x.RoleId == role.Id)
-				.Select(x => x.PermissionCode)
+			var assignedPermissions = await _context.RolePermissions
+				.Where(x => x.Scope == RoleScopeEnum.Platform && x.RoleId == role.Id)
 				.ToListAsync(cancellationToken);
 
-			var assignedPermissionCodes = assignedPermissionCodeList
+			var assignedPermissionCodes = assignedPermissions
+				.Select(x => x.PermissionCode)
 				.ToHashSet(StringComparer.Ordinal);
+			var expectedPermissionCodes = PlatformPermissionSeeds
+				.Select(x => x.Code)
+				.ToHashSet(StringComparer.Ordinal);
+
+			_context.RolePermissions.RemoveRange(
+				assignedPermissions.Where(x => !expectedPermissionCodes.Contains(x.PermissionCode)));
 
 			foreach(var permission in PlatformPermissionSeeds)
 			{
 				if (!assignedPermissionCodes.Contains(permission.Code))
 				{
-					_context.PlatformRolePermissions.Add(new PlatformRolePermission
+					_context.RolePermissions.Add(new RolePermission
 					{
+						Scope = RoleScopeEnum.Platform,
 						RoleId = role.Id,
 						PermissionCode = permission.Code
 					});
@@ -170,8 +208,8 @@ namespace EzCondo.BackEndServer.Data
 
 		private async Task SeedTenantRolesCoreAsync(Guid tenantId, CancellationToken cancellationToken)
 		{
-			var existingRoles = await _context.TenantRoles
-				.Where(x => x.TenantId == tenantId)
+			var existingRoles = await _context.Roles
+				.Where(x => x.Scope == RoleScopeEnum.Tenant && x.TenantId == tenantId)
 				.ToDictionaryAsync(x => x.Code, cancellationToken);
 
 			foreach(var roleSeed in TenantRoleSeeds)
@@ -183,23 +221,23 @@ namespace EzCondo.BackEndServer.Data
 
 				var role = new Role
 				{
-					Role = Guid.NewGuid(),
+					Id = Guid.NewGuid(),
+					Scope = RoleScopeEnum.Tenant,
 					TenantId = tenantId,
 					Code = roleSeed.Code,
 					Name = roleSeed.Name,
-					HierarchyLevel = roleSeed.HierarchyLevel,
 					IsSystem = true,
-					CreatedAt = DateTimeOffset.UtcNow
+					IsDeleted = false
 				};
 
-				_context.TenantRoles.Add(role);
+				_context.Roles.Add(role);
 
 				foreach(var permissionCode in roleSeed.PermissionCodes)
 				{
-					_context.TenantRolePermissions.Add(new RolePermission
+					_context.RolePermissions.Add(new RolePermission
 					{
-						TenantId = tenantId,
-						RoleId = role.Role,
+						Scope = RoleScopeEnum.Tenant,
+						RoleId = role.Id,
 						PermissionCode = permissionCode
 					});
 				}
@@ -264,7 +302,6 @@ namespace EzCondo.BackEndServer.Data
 		private sealed record TenantRoleSeed(
 			string Code,
 			string Name,
-			int HierarchyLevel,
 			IReadOnlyCollection<string> PermissionCodes);
 
 		private static readonly PermissionSeed[] PlatformPermissionSeeds =
@@ -400,7 +437,6 @@ namespace EzCondo.BackEndServer.Data
 			new(
 				TenantAdminRoleCode,
 				"Chủ chung cư",
-				100,
 				new[]
 				{
 					"tenant.settings.read", "tenant.settings.update",
@@ -425,7 +461,6 @@ namespace EzCondo.BackEndServer.Data
 			new(
 				ManagerRoleCode,
 				"Quản lý",
-				80,
 				new[]
 				{
 					"tenant.settings.read", "tenant.roles.read",
@@ -460,7 +495,6 @@ namespace EzCondo.BackEndServer.Data
 			new(
 				StaffRoleCode,
 				"Nhân viên",
-				50,
 				new[]
 				{
 					"tenant.apartments.read", "tenant.apartments.update",
@@ -480,7 +514,6 @@ namespace EzCondo.BackEndServer.Data
 			new(
 				ResidentRoleCode,
 				"Cư dân",
-				10,
 				new[]
 				{
 					"tenant.apartments.read_own", "tenant.contracts.read_own",

@@ -17,13 +17,13 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 				.HasMaxLength(80)
 				.IsRequired();
 
-			b.Property(x => x.Provier)
+			b.Property(x => x.Provider)
 				.HasMaxLength(30)
-				.HasDefaultValue("PAYOS")
+				.HasDefaultValue("payos")
 				.IsRequired();
 
 			b.Property(x => x.OwnerScope)
-				.HasColumnType("security.role_scope_enum")
+				.HasColumnType("payment.provider_owner_scope")
 				.IsRequired();
 
 			b.Property(x => x.MerchantCode)
@@ -55,48 +55,49 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.ProviderAccounts)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.ToTable(x =>
 			{
 				x.HasCheckConstraint(
 					"ck_provider_accounts_provider",
-					"CHECK(provider = 'payos')");
+					"(provider = 'payos')");
 
 				x.HasCheckConstraint(
 					"ck_provider_accounts_owner",
-					"CHECK ((owner_scope = 'platform' AND tenant_id IS NULL) OR (owner_scope = 'tenant' AND tenant_id IS NOT NULL))");
+					"((owner_scope = 'platform' AND tenant_id IS NULL) OR (owner_scope = 'tenant' AND tenant_id IS NOT NULL))");
 
 				x.HasCheckConstraint(
 					"ck_provider_accounts_capability",
-					"CHECK (supports_collection OR supports_payout)");
+					"(supports_collection OR supports_payout)");
 
 				x.HasCheckConstraint(
 					"ck_provider_accounts_supports_collection_secret",
-					"CHECK (NOT supports_collection OR payment_credentials_ref IS NOT NULL)");
+					"(NOT supports_collection OR payment_credentials_ref IS NOT NULL)");
 
 				x.HasCheckConstraint(
 					"ck_provider_accounts_payout_secret",
-					"CHECK (NOT supports_payout OR payout_credentials_ref IS NOT NULL)");
+					"(NOT supports_payout OR payout_credentials_ref IS NOT NULL)");
 
 				x.HasCheckConstraint(
 					"ck_provider_accounts_settings",
-					"CHECK (jsonb_typeof(settings) = 'object')");
+					"(jsonb_typeof(settings) = 'object')");
 			});
 
 			b.HasIndex(x => x.Code)
-				.IsUnique();
+				.HasDatabaseName("ux_provider_accounts_platform_code")
+				.IsUnique()
+				.HasFilter("owner_scope = 'platform'");
 
-			b.HasIndex(x => new {x.OwnerScope, x.Id})
-				.IsUnique();
+			b.HasIndex(x => new { x.TenantId, x.Code })
+				.HasDatabaseName("ux_provider_accounts_tenant_code")
+				.IsUnique()
+				.HasFilter("owner_scope = 'tenant'");
 
 			b.HasIndex(x => x.WebhookKey)
 				.IsUnique();
 
-			b.HasIndex(x => new { x.TenantId, x.Id })
-				.IsUnique();
-
-			b.HasIndex(x => new { x.Provier, x.MerchantCode })
+			b.HasIndex(x => new { x.Provider, x.MerchantCode })
 				.HasDatabaseName("ux_provider_accounts_merchant")
 				.IsUnique()
 				.HasFilter("merchant_code IS NOT NULL");
@@ -108,6 +109,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPayment
 			b.HasIndex(x => x.IsActive)
 				.HasDatabaseName("ix_provider_accounts_platform_active")
 				.HasFilter("owner_scope = 'platform'");
+
 		}
 	}
 }

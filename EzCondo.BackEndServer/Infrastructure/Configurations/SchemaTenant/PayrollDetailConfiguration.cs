@@ -26,12 +26,11 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.PayrollDetails)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.Staff)
 				.WithMany(x => x.PayrollDetails)
-				.HasForeignKey(x => new {x.TenantId, x.StaffReceive})
-				.HasPrincipalKey(x => new {x.TenantId, x.Id})
+				.HasForeignKey(x => x.StaffReceive)
 				.OnDelete(DeleteBehavior.NoAction);
 
 			b.HasOne(x => x.Payroll)
@@ -57,6 +56,8 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 					"deduction >= 0"
 					);
 			});
+
+			b.HasAlternateKey(x => new { x.TenantId, x.Id });
 
 			b.HasIndex(x => new { x.TenantId, x.PayrollId, x.StaffReceive }).IsUnique();
 		}

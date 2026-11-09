@@ -25,7 +25,10 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.Property(x => x.Status)
 				.HasColumnType("tenant.payroll_status_enum")
-				.HasDefaultValueSql("'draft'::tenant.payroll_status_enum")
+				.IsRequired();
+
+			b.Property(x => x.Version)
+				.HasDefaultValue(1)
 				.IsRequired();
 
 			b.Property(x => x.PublishedAt)
@@ -34,19 +37,22 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Payrolls)
 				.HasForeignKey(x => x.TenantId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			b.HasOne(x => x.ManagerCreated)
 				.WithMany(x => x.Payrolls)
-				.HasForeignKey(x => new {x.TenantId, x.CreatedBy })
+				.HasForeignKey(x => x.CreatedBy)
 				.OnDelete(DeleteBehavior.NoAction);
 
-			b.ToTable(x => x.HasCheckConstraint(
-				"CK_tenant_payrolls_netpay_positive",
-				"netpay >= 0"
-				));
-
-			b.HasIndex(x => new { x.TenantId, x.Id }).IsUnique();
+			b.ToTable(x =>
+			{
+				x.HasCheckConstraint(
+					"CK_tenant_payrolls_netpay_positive",
+					"netpay >= 0");
+				x.HasCheckConstraint(
+					"ck_payrolls_version",
+					"version > 0");
+			});
 
 			b.HasAlternateKey(x => new { x.TenantId, x.Id });
 		}

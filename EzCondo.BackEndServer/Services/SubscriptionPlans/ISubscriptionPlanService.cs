@@ -19,5 +19,9 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 		Task<bool> DeleteAsync(
 			Guid id,
 			CancellationToken cancellationToken = default);
+
+		Task<SubscriptionPlanResponse?> DiscontinueAsync(
+			Guid id,
+			CancellationToken cancellationToken = default);
 	}
 }

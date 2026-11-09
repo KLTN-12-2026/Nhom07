@@ -8,8 +8,8 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 	public class Invitation : ISoftDeletableEntity
 	{
 		public Guid Id { get; set; }
-		public string Email { get; set; }
-		public string TokenHash { get; set; }
+		public string Email { get; set; } = null!;
+		public string TokenHash { get; set; } = null!;
 		public DateTimeOffset? AcceptedAt { get; set; }
 		public DateTimeOffset ExpiresAt { get; set; }
 		public DateTimeOffset? RevokedAt { get; set; }
@@ -17,15 +17,15 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public Guid RoleId { get; set; }
 		public Guid TenantId { get; set; }
 		public Guid? TargetUserId { get; set; }
-		public InvitationStatusEnum Status { get; set; }
+		public InvitationStatusEnum Status { get; set; } = InvitationStatusEnum.Sent;
 
 		public DateTimeOffset CreatedAt { get; set; }
 		public bool IsDeleted { get; set; }
 		public DateTimeOffset? DeletedAt { get; set; }
 
-		public Tenant Tenant { get; set; }
-		public Role Role { get; set; }
-		public User User { get; set; }
+		public Tenant Tenant { get; set; } = null!;
+		public Role Role { get; set; } = null!;
+		public User User { get; set; } = null!;
 		public User? TargetUser { get; set; }
 	}
 }

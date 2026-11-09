@@ -17,7 +17,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaIdentity
 
 			b.Property(x => x.FullName).HasMaxLength(200).IsRequired();
 			b.Property(x => x.AvatarUrl).HasColumnType("text");
-			b.Property(x => x.Status).HasColumnType("identity.user_status_enum").HasDefaultValueSql("'inviting'::identity.user_status_enum").IsRequired();
+			b.Property(x => x.Status).HasColumnType("identity.user_status_enum").IsRequired();
 			b.Property(x => x.CitizenId).HasMaxLength(50);
 			b.Property(x => x.EmployeementContract).HasColumnType("text");
 			b.Property(x => x.DateOfBirth).HasColumnType("date");
@@ -42,11 +42,8 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaIdentity
 
 				x.HasCheckConstraint(
 					"CK_users_bank_name_and_bank_account_name",
-					"(bank_name IS NULL AND banl_account_name IS NULL) OR (bank_name IS NOT NULL AND bank_account_name IS NOT NULL)");
+					"(bank_name IS NULL AND bank_account_number IS NULL) OR (bank_name IS NOT NULL AND bank_account_number IS NOT NULL)");
 			});
-
-			b.HasIndex(x => x.NormalizedEmail).IsUnique();
-			b.HasIndex(x => x.PhoneNumber).IsUnique();
 
 			b.HasIndex(x => x.NormalizedEmail)
 				.HasDatabaseName("ux_users_normalized_email")
@@ -58,7 +55,9 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaIdentity
 				.IsUnique()
 				.HasFilter("phone_number IS NOT NULL");
 
-			b.HasIndex(x => new { x.TenantId, x.Id }).IsUnique();
+			b.HasIndex(x => x.TenantId)
+				.HasDatabaseName("ix_users_tenant")
+				.HasFilter("tenant_id IS NOT NULL");
 		}
 	}
 }
