@@ -56,19 +56,19 @@ export const Topbar: React.FC<TopbarProps> = ({
       desc: 'Theo dõi báo cáo khai thác, tài chính & hiệu suất vận hành',
     },
     manager: {
-      label: 'Ban Quản lý (Trưởng BQL)',
+      label: 'Quản lý',
       desc: 'Điều hành toàn diện, phân công kỹ thuật & duyệt hóa đơn',
     },
     staff: {
-      label: 'Nhân viên kỹ thuật / Lễ tân',
+      label: 'Nhân viên',
       desc: 'Xử lý sự cố, ca trực, cập nhật căn hộ & thu phí',
     },
     resident: {
-      label: 'Cư dân căn hộ (A-1204)',
+      label: 'Cư dân',
       desc: 'Cổng thanh toán cước, gửi yêu cầu bảo trì & đặt tiện ích',
     },
     superadmin: {
-      label: 'Quản trị viên nền tảng',
+      label: 'Quản trị viên',
       desc: 'Quản lý toàn bộ danh sách tòa nhà, bản quyền & hạ tầng',
     },
   };
@@ -142,7 +142,14 @@ export const Topbar: React.FC<TopbarProps> = ({
                     }`}
                   >
                     <div>
-                      <div className="font-medium text-slate-900">{tenant.name}</div>
+                      <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                        <span>{tenant.name}</span>
+                        {tenant.status === 'suspended' && (
+                          <span className="rounded bg-rose-100 text-rose-700 px-1.5 py-0.5 text-[9px] font-bold">
+                            Tạm ngưng
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[11px] text-slate-400">
                         {tenant.totalApartments} căn • Mã {tenant.code}
                       </div>

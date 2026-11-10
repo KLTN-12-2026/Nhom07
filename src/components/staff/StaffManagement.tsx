@@ -48,11 +48,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   ];
 
   const roles = [
+    { key: 'resident', name: 'Cư dân' },
+    { key: 'staff', name: 'Nhân viên' },
     { key: 'owner', name: 'Chủ chung cư' },
-    { key: 'manager', name: 'Quản lý (Manager)' },
-    { key: 'staff', name: 'Nhân viên (Staff)' },
-    { key: 'resident', name: 'Cư dân (Resident)' },
-    { key: 'superadmin', name: 'Super Admin' },
+    { key: 'manager', name: 'Quản lý' },
+    { key: 'superadmin', name: 'Quản trị viên' },
   ];
 
   // Default permissions matrix mapping

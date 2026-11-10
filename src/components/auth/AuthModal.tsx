@@ -203,12 +203,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         {acc.role === 'resident'
                           ? `Cư dân (${acc.apartmentCode})`
                           : acc.role === 'manager'
-                          ? 'Ban Quản lý'
+                          ? 'Quản lý'
                           : acc.role === 'staff'
-                          ? 'Kỹ sư MEP'
+                          ? 'Nhân viên'
                           : acc.role === 'owner'
                           ? 'Chủ chung cư'
-                          : 'Super Admin'}
+                          : 'Quản trị viên'}
                       </span>
                     </button>
                   ))}
