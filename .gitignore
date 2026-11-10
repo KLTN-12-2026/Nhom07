@@ -505,3 +505,8 @@ AGENTS.md
 # Local application logs
 logs/
 **/logs/
+
+# React/Vite generated output
+/EzCondo.Web/dist/
+/EzCondo.Web/coverage/
+/EzCondo.Web/.vite/
