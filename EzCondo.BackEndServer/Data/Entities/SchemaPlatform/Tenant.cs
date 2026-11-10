@@ -19,7 +19,13 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public DateTimeOffset? TrialEndsAt { get; set; }
 		public DateTimeOffset CreatedAt { get; set; }
 		public DateTimeOffset? UpdatedAt { get; set; }
-
+		public DateTimeOffset? SuspensionEffectiveAt { get; set; }
+		public string? SuspensionReasonCode { get; set; }
+		public string? SuspensionReason { get; set; }
+		public Guid? SuspensionRequestedByAdminId { get; set; }
+		public DateTimeOffset? SuspensionNoticeSentAt { get; set; }
+		public DateTimeOffset? SuspendedAt { get; set; }
+		
 		public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 		public ICollection<Rule> Rules{ get; set; } = new List<Rule>();
 		public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();

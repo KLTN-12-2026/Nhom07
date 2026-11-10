@@ -48,6 +48,9 @@ builder.Services
 	})
 	.AddEntityFrameworkStores<ApplicationDbContext>();
 
+//Đăng ký TimeProvider
+builder.Services.AddSingleton(TimeProvider.System);
+
 //Đăng ký PlatformAccounts
 builder.Services.Configure<PlatformAccountsOptions>(
 	builder.Configuration.GetSection(PlatformAccountsOptions.SectionName));

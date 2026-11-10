@@ -1242,6 +1242,32 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("platform.tenant_status_enum")
                         .HasColumnName("status");
 
+                    b.Property<DateTimeOffset?>("SuspendedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("suspended_at");
+
+                    b.Property<DateTimeOffset?>("SuspensionEffectiveAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("suspension_effective_at");
+
+                    b.Property<DateTimeOffset?>("SuspensionNoticeSentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("suspension_notice_sent_at");
+
+                    b.Property<string>("SuspensionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("suspension_reason");
+
+                    b.Property<string>("SuspensionReasonCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("suspension_reason_code");
+
+                    b.Property<Guid?>("SuspensionRequestedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("suspension_requested_by_admin_id");
+
                     b.Property<string>("TaxCode")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -1266,12 +1292,24 @@ namespace EzCondo.BackEndServer.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
+                    b.HasIndex("SuspensionEffectiveAt")
+                        .HasDatabaseName("ix_tenants_pending_suspension")
+                        .HasFilter("suspension_effective_at IS NOT NULL AND suspended_at IS NULL");
+
+                    b.HasIndex("SuspensionRequestedByAdminId");
+
                     b.HasIndex("TaxCode")
                         .IsUnique();
 
                     b.ToTable("tenants", "platform", t =>
                         {
                             t.HasCheckConstraint("CK_tenants_slug_format", "slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'");
+
+                            t.HasCheckConstraint("ck_tenants_suspended_at", "status <> 'suspended' OR suspended_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_tenants_suspension_notice_period", "suspension_notice_sent_at IS NULL OR suspension_effective_at >= suspension_notice_sent_at + INTERVAL '12 hours'");
+
+                            t.HasCheckConstraint("ck_tenants_suspension_reason_code", "suspension_reason_code IS NULL OR suspension_reason_code IN ('owner_request', 'policy_violation')");
 
                             t.HasCheckConstraint("ck_tenants_trial", "status <> 'trial' OR trial_ends_at IS NOT NULL");
                         });
@@ -2867,6 +2905,14 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Navigation("AdminDeleted");
 
                     b.Navigation("AdminUpdated");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
+                        .WithMany()
+                        .HasForeignKey("SuspensionRequestedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", b =>

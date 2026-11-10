@@ -4,6 +4,7 @@ using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
 using EzCondo.BackEndServer.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Security.Claims;
 
 namespace EzCondo.BackEndServer.Services.Tenants
 {
@@ -11,7 +12,8 @@ namespace EzCondo.BackEndServer.Services.Tenants
 		ApplicationDbContext dbcontext,
 		DbInitializer dbInitializer,
 		ITenantIdentityGenerator identityGenerator,
-		TimeProvider timeProvider)
+		TimeProvider timeProvider,
+		IHttpContextAccessor httpContextAccessor)
 		: ITenantService
 	{
 		private const int TrialDurationDays = 30;
@@ -180,6 +182,196 @@ namespace EzCondo.BackEndServer.Services.Tenants
 					subscription.EndsAt),
 				tenant.CreatedAt,
 				tenant.UpdatedAt);
+		}
+
+		public async Task<ScheduleTenantSuspensionResult> ScheduleSuspensionAsync(
+			Guid tenantId, 
+			ScheduleTenantSuspensionRequest request, 
+			CancellationToken cancellationToken = default)
+		{
+			ArgumentNullException.ThrowIfNull(request);
+
+			var now = timeProvider.GetUtcNow();
+			var adminId = GetCurrentUserId();
+
+			await using var transaction = await dbcontext.Database
+				.BeginTransactionAsync(
+				cancellationToken);
+
+			var tenant = await dbcontext.Tenants
+				.FromSqlInterpolated(
+				$"""
+				SELECT *
+				FROM platform.tenants
+				WHERE id = {tenantId}
+				FOR UPDATE
+				""")
+				.SingleOrDefaultAsync(cancellationToken);
+
+			if(tenant is null)
+			{
+				return ScheduleTenantSuspensionResult.Failed(
+					ScheduleTenantSuspensionFailure.TenantNotFound);
+			}
+
+			if(tenant.Status == TenantStatusEnum.Suspended)
+			{
+				return ScheduleTenantSuspensionResult.Failed(
+					ScheduleTenantSuspensionFailure
+					.TenantAlreadySuspended);
+			}
+
+			if(tenant.Status == TenantStatusEnum.Closed)
+			{
+				return ScheduleTenantSuspensionResult.Failed(
+					ScheduleTenantSuspensionFailure.TenantClosed);
+			}
+
+			if (tenant.SuspensionEffectiveAt.HasValue)
+			{
+				return ScheduleTenantSuspensionResult.Failed(
+					ScheduleTenantSuspensionFailure
+					.SuspensionAlreadyScheduled);
+			}
+
+			tenant.SuspensionReasonCode = ToReasonCode(request.ReasonCode);
+
+			tenant.SuspensionReason = request.Reason.Trim();
+			tenant.SuspensionRequestedByAdminId = adminId;
+
+			tenant.SuspensionEffectiveAt = now.AddHours(request.NoticeHours);
+
+			tenant.SuspensionNoticeSentAt = null;
+			tenant.SuspendedAt = null;
+
+			await dbcontext.SaveChangesAsync(cancellationToken);
+			await transaction.CommitAsync(cancellationToken);
+
+			return ScheduleTenantSuspensionResult.Success(
+				new TenantSuspensionResponse(
+					tenant.Id,
+					tenant.Status,
+					request.ReasonCode,
+					tenant.SuspensionReason,
+					tenant.SuspensionEffectiveAt.Value,
+					tenant.SuspensionNoticeSentAt,
+					tenant.SuspendedAt));
+		}
+
+		private Guid GetCurrentUserId()
+		{
+			var value = httpContextAccessor.HttpContext?.User
+				.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			return Guid.TryParse(value, out var userId)
+				? userId
+				: throw new UnauthorizedAccessException(
+					"Không xác định được tài khoản Platform hiện tại.");
+		}
+
+		private static string ToReasonCode(
+			TenantSuspensionReasonCode reasonCode)
+		{
+			return reasonCode switch
+			{
+				TenantSuspensionReasonCode.OwnerRequest =>
+					"owner_request",
+
+				TenantSuspensionReasonCode.PolicyViolation =>
+					"policy_violation",
+
+				_ => throw new ArgumentOutOfRangeException(
+					nameof(reasonCode))
+			};
+		}
+
+		public async Task<RestoreTenantResult> RestoreAsync(
+			Guid tenantId, 
+			CancellationToken cancellationToken = default)
+		{
+			var now = timeProvider.GetUtcNow();
+			var today = DateOnly.FromDateTime(now.UtcDateTime);
+
+			await using var transaction = await dbcontext.Database
+				.BeginTransactionAsync(cancellationToken);
+
+			var tenant = await dbcontext.Tenants
+				.FromSqlInterpolated(
+				$"""
+				SELECT *
+				FROM platform.tenants
+				WHERE id = {tenantId}
+				FOR UPDATE
+				""")
+				.SingleOrDefaultAsync(cancellationToken);
+
+			if(tenant is null)
+			{
+				return RestoreTenantResult.Failed(RestoreTenantFailure.TenantNotFound);
+			}
+
+			if(tenant.Status != TenantStatusEnum.Suspended)
+			{
+				return RestoreTenantResult.Failed(
+					RestoreTenantFailure.TenantNotSuspended);
+			}
+
+			var subscription = await dbcontext.Subscriptions
+				.AsNoTracking()
+				.SingleOrDefaultAsync(
+				x => x.TenantId == tenantId && (
+					x.Status == SubscriptionStatusEnum.Trial ||
+					x.Status == SubscriptionStatusEnum.Active ||
+					x.Status == SubscriptionStatusEnum.PastDue),
+				cancellationToken);
+				
+			if(subscription is null)
+			{
+				return RestoreTenantResult.Failed(RestoreTenantFailure.NoValidSubscription);
+			}
+
+			TenantStatusEnum restoredStatus;
+
+			var trialValid =
+				subscription.Status == SubscriptionStatusEnum.Trial &&
+				tenant.TrialEndsAt.HasValue &&
+				tenant.TrialEndsAt.Value > now &&
+				subscription.EndsAt >= today;
+
+			var activeSubscriptionIsValid =
+				subscription.Status == SubscriptionStatusEnum.Active &&
+				subscription.EndsAt >= today;
+
+			if (trialValid)
+			{
+				restoredStatus = TenantStatusEnum.Trial;
+			} 
+			else if (activeSubscriptionIsValid)
+			{
+				restoredStatus = TenantStatusEnum.Active;
+			}
+			else
+			{
+				return RestoreTenantResult.Failed(RestoreTenantFailure.NoValidSubscription);
+			}
+
+			tenant.Status = restoredStatus;
+
+			tenant.SuspensionEffectiveAt = null;
+			tenant.SuspensionReasonCode = null;
+			tenant.SuspensionReason = null;
+			tenant.SuspensionRequestedByAdminId= null;
+			tenant.SuspensionNoticeSentAt= null;
+			tenant.SuspendedAt = null; 
+
+			await dbcontext.SaveChangesAsync(cancellationToken);
+			await transaction.CommitAsync(cancellationToken);
+
+			return RestoreTenantResult.Success(
+				new TenantRestoreResponse(
+					tenant.Id,
+					tenant.Status,
+					now));
 		}
 	}
 }
