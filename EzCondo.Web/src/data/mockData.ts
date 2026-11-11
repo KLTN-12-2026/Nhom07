@@ -1663,3 +1663,6 @@ export const INITIAL_TENANT_INVITATIONS: TenantInvitation[] = [
     notes: 'Kích hoạt tài khoản thử nghiệm 30 ngày cho Quản lý mới',
   },
 ];
+
+
+

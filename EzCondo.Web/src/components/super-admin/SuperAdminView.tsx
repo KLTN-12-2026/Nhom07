@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { platformApi } from '../../services/platformApi';
 import {
   ShieldAlert,
   Building2,
@@ -105,6 +106,11 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   }
 
   const [activeTab, setActiveTab] = useState<'tenants' | 'licensing' | 'invitations' | 'metrics' | 'leads'>('tenants');
+  const [isApiOnline, setIsApiOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    platformApi.healthCheck().then((ok) => setIsApiOnline(ok));
+  }, []);
 
   // Search & Filter for Tenants
   const [tenantSearch, setTenantSearch] = useState('');
@@ -442,11 +448,36 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="rounded bg-rose-100 text-rose-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-              Quản trị viên Super Admin
+              Quản trị viên
             </span>
             <span className="text-xs text-slate-400">Nền tảng Multi-tenant EZCondo</span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
+                isApiOnline === true
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : isApiOnline === false
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-slate-50 text-slate-500 border-slate-200'
+              }`}
+              title="API Backend Platform (EzCondo.BackEndServer v1.0)"
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  isApiOnline === true
+                    ? 'bg-emerald-500 animate-pulse'
+                    : isApiOnline === false
+                    ? 'bg-amber-500'
+                    : 'bg-slate-400'
+                }`}
+              />
+              {isApiOnline === true
+                ? 'Backend API: Online'
+                : isApiOnline === false
+                ? 'Backend API: Local Fallback'
+                : 'Đang kiểm tra API...'}
+            </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
             Trung Tâm Quản Trị Hệ Thống SaaS
