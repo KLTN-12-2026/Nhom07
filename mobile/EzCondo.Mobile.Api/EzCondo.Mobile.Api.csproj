@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../EzCondo.Web/backend/EZCondoAPI.csproj" />
+    <ProjectReference Include="../EzCondo.Mobile.Contracts/EzCondo.Mobile.Contracts.csproj" />
+  </ItemGroup>
+</Project>

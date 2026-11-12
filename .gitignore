@@ -510,3 +510,8 @@ logs/
 /EzCondo.Web/dist/
 /EzCondo.Web/coverage/
 /EzCondo.Web/.vite/
+
+# Mobile local database, keys and verification artifacts
+/mobile/.local/
+*.db-shm
+*.db-wal
