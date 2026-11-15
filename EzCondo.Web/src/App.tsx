@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  platformApi,
+  mapBackendPlanToFrontend,
+  mapFrontendPackageToBackendCreate,
+  mapFrontendTenantToBackendCreate,
+} from './services/platformApi';
 import {
   TenantCondo,
   UserRole,
@@ -95,6 +101,26 @@ export default function App() {
   // Super Admin: Commercial Policy & Tenant Management State
   const [packages, setPackages] = useState<SubscriptionPackage[]>(INITIAL_SUBSCRIPTION_PACKAGES);
   const [tenantInvitations, setTenantInvitations] = useState<TenantInvitation[]>(INITIAL_TENANT_INVITATIONS);
+
+  // Fetch Subscription Plans from Platform Backend API (https://trandoi-001-site1.gtempurl.com)
+  useEffect(() => {
+    async function loadPlatformPlans() {
+      try {
+        const livePlans = await platformApi.subscriptionPlans.getAll();
+        if (Array.isArray(livePlans) && livePlans.length > 0) {
+          const mapped = livePlans.map(mapBackendPlanToFrontend);
+          setPackages((prev) => {
+            const liveIds = new Set(mapped.map((m) => m.id));
+            const existingNonLive = prev.filter((p) => !liveIds.has(p.id));
+            return [...mapped, ...existingNonLive];
+          });
+        }
+      } catch (err: any) {
+        console.warn('Backend Platform Plans not loaded (will use fallback packages):', err.message);
+      }
+    }
+    loadPlatformPlans();
+  }, []);
 
   // Global search & UI
   const [searchQuery, setSearchQuery] = useState('');
@@ -473,8 +499,9 @@ export default function App() {
 
   // ==========================================
   // SUPER ADMIN: TENANT & COMMERCIAL POLICY HANDLERS (Diagrams 1 & 2)
+  // Integrated with Live Backend API (https://trandoi-001-site1.gtempurl.com)
   // ==========================================
-  const handleAddTenant = (newTenant: Partial<TenantCondo>) => {
+  const handleAddTenant = async (newTenant: Partial<TenantCondo>) => {
     const slugGen = (newTenant.slug || newTenant.name || 'tenant')
       .toLowerCase()
       .normalize('NFD')
@@ -483,8 +510,22 @@ export default function App() {
       .trim()
       .replace(/\s+/g, '-');
 
+    let assignedId = `tenant-${Date.now()}`;
+
+    // Call live backend API: POST /api/platform/tenants
+    try {
+      const backendPayload = mapFrontendTenantToBackendCreate(newTenant, newTenant.packageId);
+      const apiResult = await platformApi.tenants.create(backendPayload);
+      if (apiResult && apiResult.id) {
+        assignedId = apiResult.id;
+        console.log('✅ Đã tạo Tenant trên Backend thành công:', apiResult.id);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API tạo Tenant thất bại (sử dụng local state):', err.message);
+    }
+
     const tenant: TenantCondo = {
-      id: `tenant-${Date.now()}`,
+      id: assignedId,
       name: newTenant.name || '',
       code: (newTenant.code || 'COND').toUpperCase(),
       slug: slugGen,
@@ -531,9 +572,24 @@ export default function App() {
     }
   };
 
-  // Diagram 2 - Tạm ngưng Tenant
-  const handleSuspendTenant = (tenantId: string, reason: string) => {
+  // Diagram 2 - Tạm ngưng Tenant (POST /api/platform/tenants/{id}/suspension)
+  const handleSuspendTenant = async (tenantId: string, reason: string) => {
     const timestamp = new Date().toLocaleString('vi-VN');
+
+    // Call live backend API if valid UUID
+    try {
+      if (tenantId.includes('-') && tenantId.length === 36) {
+        await platformApi.tenants.suspend(tenantId, {
+          reasonCode: 'PolicyViolation',
+          reason: reason || 'Tạm ngưng theo quyết định của Quản trị viên',
+          noticeHours: 24,
+        });
+        console.log('✅ Đã gửi lệnh tạm đình chỉ Tenant lên Backend API');
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API tạm ngưng Tenant thất bại (sử dụng local state):', err.message);
+    }
+
     setTenants((prev) =>
       prev.map((t) =>
         t.id === tenantId
@@ -558,9 +614,20 @@ export default function App() {
     }
   };
 
-  // Diagram 2 - Khôi phục Tenant
-  const handleRestoreTenant = (tenantId: string) => {
+  // Diagram 2 - Khôi phục Tenant (POST /api/platform/tenants/{id}/restore)
+  const handleRestoreTenant = async (tenantId: string) => {
     const timestamp = new Date().toLocaleString('vi-VN');
+
+    // Call live backend API if valid UUID
+    try {
+      if (tenantId.includes('-') && tenantId.length === 36) {
+        await platformApi.tenants.restore(tenantId);
+        console.log('✅ Đã gửi lệnh khôi phục Tenant lên Backend API');
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API khôi phục Tenant thất bại (sử dụng local state):', err.message);
+    }
+
     setTenants((prev) =>
       prev.map((t) =>
         t.id === tenantId
@@ -585,21 +652,56 @@ export default function App() {
     }
   };
 
-  // Diagram 1 - Quản lý chính sách thương mại: Tạo gói bản quyền
-  const handleAddPackage = (newPkg: Omit<SubscriptionPackage, 'id' | 'createdAt' | 'updatedAt'>) => {
+  // Diagram 1 - Quản lý chính sách thương mại: Tạo gói bản quyền (POST /api/platform/subscription-plans)
+  const handleAddPackage = async (newPkg: Omit<SubscriptionPackage, 'id' | 'createdAt' | 'updatedAt'>) => {
     const timestamp = new Date().toISOString().split('T')[0];
+    let assignedId = `pkg-${Date.now().toString().slice(-4)}`;
+
+    // Call live backend API: POST /api/platform/subscription-plans
+    try {
+      const backendPayload = mapFrontendPackageToBackendCreate(newPkg);
+      const apiResult = await platformApi.subscriptionPlans.create(backendPayload);
+      if (apiResult && apiResult.id) {
+        assignedId = apiResult.id;
+        console.log('✅ Đã tạo gói SubscriptionPlan trên Backend thành công:', apiResult.id);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API tạo gói SubscriptionPlan thất bại (sử dụng local state):', err.message);
+    }
+
     const pkg: SubscriptionPackage = {
       ...newPkg,
-      id: `pkg-${Date.now().toString().slice(-4)}`,
+      id: assignedId,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
     setPackages((prev) => [...prev, pkg]);
   };
 
-  // Diagram 1 - Cập nhật thông tin gói
-  const handleUpdatePackage = (packageId: string, updated: Partial<SubscriptionPackage>) => {
+  // Diagram 1 - Cập nhật thông tin gói (PUT /api/platform/subscription-plans/{id})
+  const handleUpdatePackage = async (packageId: string, updated: Partial<SubscriptionPackage>) => {
     const timestamp = new Date().toISOString().split('T')[0];
+
+    // Call live backend API if valid UUID
+    try {
+      if (packageId.includes('-') && packageId.length === 36) {
+        await platformApi.subscriptionPlans.update(packageId, {
+          name: (updated.name || 'Gói bản quyền').slice(0, 50),
+          description: updated.tagline || updated.name,
+          price: updated.monthlyPrice || 0,
+          featureLimits: {
+            maxApartments: updated.maxApartments,
+            annualDiscountPercent: updated.annualDiscountPercent,
+            features: updated.features,
+          },
+          isAvailable: updated.status === 'active',
+        });
+        console.log('✅ Đã cập nhật gói SubscriptionPlan trên Backend thành công');
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API cập nhật gói thất bại (sử dụng local state):', err.message);
+    }
+
     setPackages((prev) =>
       prev.map((p) =>
         p.id === packageId
@@ -613,9 +715,20 @@ export default function App() {
     );
   };
 
-  // Diagram 1 - Ngừng kinh doanh gói
-  const handleDiscontinuePackage = (packageId: string, reason: string) => {
+  // Diagram 1 - Ngừng kinh doanh gói (POST /api/platform/subscription-plans/{id}/discontinue)
+  const handleDiscontinuePackage = async (packageId: string, reason: string) => {
     const timestamp = new Date().toLocaleString('vi-VN');
+
+    // Call live backend API if valid UUID
+    try {
+      if (packageId.includes('-') && packageId.length === 36) {
+        await platformApi.subscriptionPlans.discontinue(packageId);
+        console.log('✅ Đã gửi lệnh ngừng kinh doanh gói lên Backend API');
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Gửi API ngừng kinh doanh gói thất bại (sử dụng local state):', err.message);
+    }
+
     setPackages((prev) =>
       prev.map((p) =>
         p.id === packageId
