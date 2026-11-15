@@ -1,5 +1,9 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="global.json" />
+  </Folder>
   <Project Path="EzCondo.BackEndServer/EzCondo.BackEndServer.csproj" />
   <Project Path="EzCondo.Portal/EzCondo.Portal.csproj" />
   <Project Path="EzCondo.ViewModel/EzCondo.ViewModel.csproj" />
+  <Project Path="tests/EzCondo.BackEndServer.UnitTests/EzCondo.BackEndServer.UnitTests.csproj" />
 </Solution>

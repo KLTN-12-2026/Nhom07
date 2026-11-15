@@ -4,7 +4,7 @@ namespace EzCondo.BackEndServer.Contracts.Tenants
 {
 	public sealed record TenantRestoreResponse
 	(
-		Guid TenatId,
+		Guid TenantId,
 		TenantStatusEnum Status,
 		DateTimeOffset RestoredAt
 	);

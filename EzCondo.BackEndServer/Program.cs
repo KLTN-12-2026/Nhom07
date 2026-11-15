@@ -5,9 +5,16 @@ using Npgsql;
 using EzCondo.BackEndServer.Services.SubscriptionPlans;
 using EzCondo.BackEndServer.Infrastructure.Authentication.Options;
 using EzCondo.BackEndServer.Infrastructure;
-using System.Text;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
 using EzCondo.BackEndServer.Services.Tenants;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Identity;
+using EzCondo.BackEndServer.Services.Authentication;
+using Microsoft.OpenApi.Models;
+using EzCondo.BackEndServer.Infrastructure.Invitations;
+using EzCondo.BackEndServer.Services.TenantAdminInvitations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,15 +53,34 @@ builder.Services
 		options.Lockout.MaxFailedAccessAttempts = 5;
 		options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 	})
+	.AddSignInManager()
 	.AddEntityFrameworkStores<ApplicationDbContext>();
 
 //Đăng ký TimeProvider
 builder.Services.AddSingleton(TimeProvider.System);
 
+//Đăng ký Invitation service
+builder.Services.AddSingleton<
+	IInvitationTokenService,
+	InvitationTokenService>();
+
+//Đăng ký JwtTokenService
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+//Đăng ký AuthService
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+//Đăng ký TenantAdminInvitationService
+builder.Services.AddScoped<
+	ITenantAdminInvitationService, TenantAdminInvitationService>();
+//Đăng ký handler
+builder.Services.AddScoped<JwtBearerEventsHandler>();
+
 //Đăng ký PlatformAccounts
 builder.Services.Configure<PlatformAccountsOptions>(
 	builder.Configuration.GetSection(PlatformAccountsOptions.SectionName));
 
+//Đăng ký Jwt
 builder.Services
 	.AddOptions<JwtOptions>()
 	.Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
@@ -65,14 +91,79 @@ builder.Services
 		x => !string.IsNullOrWhiteSpace(x.Audience),
 		"Jwt:Audience không được để trống.")
 	.Validate(
-		x =>
-			Encoding.UTF8.GetByteCount(x.SigningKey) >= 32,
-		"Jwt:SigningKey phải có ít nhất 32 byte.")
+		x => IsValidSigningKey(x.SigningKey),
+		"Jwt:SigningKey phải là Base64 hợp lệ và chứa ít nhất 32 byte.")
 	.Validate(
 		x =>
 			x.AccessTokenMinutes is > 0 and <= 60,
 		"Jwt:AccessTokenMinutes phải nằm trong khoảng 1 đến 60.")
 	.ValidateOnStart();
+
+//Đăng ký Authentication
+var jwtOptions = builder.Configuration
+	.GetRequiredSection(JwtOptions.SectionName)
+	.Get<JwtOptions>()
+	?? throw new InvalidOperationException("Không tìm thấy cấu hình Jwt.");
+
+if (!IsValidSigningKey(jwtOptions.SigningKey))
+{
+	throw new InvalidOperationException(
+		"Jwt:SigningKey phải là Base64 hợp lệ và chứa ít nhất 32 bytes.");
+}
+
+var signingKeyBytes = Convert.FromBase64String(jwtOptions.SigningKey);
+
+builder.Services.AddAuthentication(x =>
+{
+	x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+	.AddJwtBearer(x =>
+	{
+		x.MapInboundClaims = false;
+
+		x.EventsType = typeof(JwtBearerEventsHandler);
+
+		x.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidIssuer = jwtOptions.Issuer,
+
+			ValidateAudience = true,
+			ValidAudience = jwtOptions.Audience,
+
+			ValidateIssuerSigningKey = true,
+			IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes),
+
+			ValidateLifetime = true,
+			RequireExpirationTime = true,
+			RequireSignedTokens = true,
+
+			ClockSkew = TimeSpan.Zero,
+
+			NameClaimType = "name",
+			RoleClaimType = "role"
+		};
+	});
+
+builder.Services.AddAuthorization(x =>
+{
+	x.AddPolicy(
+		AuthPolicies.PlatformScope,
+		policy =>
+		{
+			policy.RequireAuthenticatedUser();
+			policy.RequireClaim(AppClaimTypes.Scope, "platform");
+		});
+
+	x.AddPolicy(
+		AuthPolicies.TenantScope,
+		policy =>
+		{
+			policy.RequireAuthenticatedUser();
+			policy.RequireClaim(AppClaimTypes.Scope, "tenant");
+		});
+});
 
 //Đăng ký ConnectionString
 var connectionString = builder.Configuration
@@ -127,7 +218,42 @@ builder.Services.AddScoped<
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+	options.AddSecurityDefinition(
+		"Bearer",
+		new OpenApiSecurityScheme
+		{
+			Name = "Authorization",
+			Type = SecuritySchemeType.Http,
+			Scheme = "bearer",
+			BearerFormat = "JWT",
+			In = ParameterLocation.Header,
+			Description =
+				"Nhập JWT access token. Không cần nhập tiền tố Bearer."
+		});
+
+	options.AddSecurityRequirement(
+		new OpenApiSecurityRequirement
+		{
+			{
+				new OpenApiSecurityScheme
+				{
+					Reference = new OpenApiReference
+					{
+						Type = ReferenceType.SecurityScheme,
+						Id = "Bearer"
+					}
+				},
+				Array.Empty<string>()
+			}
+		});
+});
+
+// Cho phép mở Swagger có chủ đích ở môi trường demo/staging mà không cần
+// chuyển toàn bộ ứng dụng sang Development.
+var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled");
 
 var app = builder.Build();
 
@@ -145,18 +271,43 @@ await DataBaseSeeder.SeedPlatformAccountsAsync(
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || swaggerEnabled)
 {
 	app.UseSwagger();
-	app.UseSwaggerUI();
+	app.UseSwaggerUI(options =>
+	{
+		options.SwaggerEndpoint(
+			"/swagger/v1/swagger.json",
+			"EzCondo API v1");
+		options.RoutePrefix = "swagger";
+	});
 }
 
 app.UseHttpsRedirection();
 
 app.UseCors(ReactCorsPolicy);
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+static bool IsValidSigningKey(string? value)
+{
+	if (string.IsNullOrWhiteSpace(value))
+	{
+		return false;
+	}
+
+	try
+	{
+		return Convert.FromBase64String(value).Length >= 32;
+	}
+	catch (FormatException)
+	{
+		return false;
+	}
+}

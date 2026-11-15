@@ -33,7 +33,7 @@ namespace EzCondo.BackEndServer.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_status_enum", new[] { "trial", "active", "past_due", "cancelled", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "closed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "security", "role_scope_enum", new[] { "platform", "tenant" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invitation_status_enum", new[] { "accepted", "sent", "revoked", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invitation_status_enum", new[] { "accepted", "sent", "revoked", "expired", "pending_delivery" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invoice_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_disbursement_item_status", new[] { "ready", "processing", "succeeded", "failed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "payroll_disbursement_status", new[] { "ready", "issuing", "processing", "partially_succeeded", "succeeded", "failed" });
@@ -1729,6 +1729,16 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("citext")
                         .HasColumnName("email");
 
+                    b.Property<int>("EmailSendAttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("email_send_attempt_count");
+
+                    b.Property<DateTimeOffset?>("EmailSentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("email_sent_at");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("expires_at");
@@ -1738,6 +1748,15 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
+
+                    b.Property<DateTimeOffset?>("LastEmailAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_email_attempt_at");
+
+                    b.Property<string>("LastEmailErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_email_error_code");
 
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("timestamptz")
@@ -1777,12 +1796,12 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasIndex("Status", "ExpiresAt")
                         .HasDatabaseName("ix_invitations_expiring")
-                        .HasFilter("status = 'sent'");
+                        .HasFilter("status IN ('pending_delivery', 'sent')");
 
                     b.HasIndex("TenantId", "Email", "RoleId")
                         .IsUnique()
                         .HasDatabaseName("ix_invitations_active")
-                        .HasFilter("status = 'sent' AND is_deleted = false");
+                        .HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false");
 
                     b.HasIndex("TenantId", "Email", "TokenHash")
                         .IsUnique();
@@ -1791,9 +1810,13 @@ namespace EzCondo.BackEndServer.Migrations
                         {
                             t.HasCheckConstraint("ck_invitations_accepted", "status <> 'accepted' OR accepted_at IS NOT NULL");
 
+                            t.HasCheckConstraint("ck_invitations_email_attempt_count", "email_send_attempt_count >= 0");
+
                             t.HasCheckConstraint("ck_invitations_expiry", "expires_at > created_at");
 
                             t.HasCheckConstraint("ck_invitations_revoked", "status <> 'revoked' OR revoked_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_invitations_sent_email", "status <> 'sent' OR email_sent_at IS NOT NULL");
                         });
                 });
 
