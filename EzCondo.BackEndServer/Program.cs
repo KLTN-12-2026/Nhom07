@@ -15,6 +15,9 @@ using EzCondo.BackEndServer.Services.Authentication;
 using Microsoft.OpenApi.Models;
 using EzCondo.BackEndServer.Infrastructure.Invitations;
 using EzCondo.BackEndServer.Services.TenantAdminInvitations;
+using EzCondo.BackEndServer.Infrastructure.Email.Options;
+using EzCondo.BackEndServer.Infrastructure.Email;
+using EzCondo.BackEndServer.Infrastructure.Invitations.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +69,59 @@ builder.Services.AddSingleton<
 
 //Đăng ký JwtTokenService
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+//Đăng ký mailkit
+builder.Services
+	.AddOptions<SmtpOptions>()
+	.Bind(
+		builder.Configuration
+		.GetSection(SmtpOptions.SectionName))
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.Host),
+		"Email:Smtp:Host không được để trống.")
+	.Validate(
+		x => x.Port is > 0 and <= 65535,
+		"Email:Smtp:Port không hợp lệ.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.Username),
+		"Email:Smtp:Username không được để trống.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.AppPassword),
+		"Email:Smtp:AppPassword không được để trống.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.FromAddress),
+		"Email:Smtp:FromAddress không được để trống.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.FromName),
+		"Email:Smtp:FromName không được để trống.")
+	.ValidateOnStart();
+
+//Đăng ký invitation link options
+builder.Services
+	.AddOptions<InvitationLinkOptions>()
+	.Bind(
+		builder.Configuration.GetSection(
+			InvitationLinkOptions.SectionName))
+	.Validate(
+		x =>
+			Uri.TryCreate(
+				x.PortalBaseUrl,
+				UriKind.Absolute,
+				out var uri) &&
+			(
+				uri.Scheme == Uri.UriSchemeHttp ||
+				uri.Scheme == Uri.UriSchemeHttps
+			),
+		"Invitations:PortalBaseUrl phải là URL HTTP/HTTPS hợp lệ.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.AcceptPath),
+		"Invitations:AcceptPath không được để trống.")
+	.ValidateOnStart();
+
+//Đăng ký sender
+builder.Services.AddSingleton<
+	IInvitationEmailSender,
+	MailKitInvitationEmailSender>();
 
 //Đăng ký AuthService
 builder.Services.AddScoped<IAuthService, AuthService>();

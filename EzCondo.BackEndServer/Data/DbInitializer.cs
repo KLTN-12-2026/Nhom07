@@ -13,6 +13,19 @@ namespace EzCondo.BackEndServer.Data
 		public const string StaffRoleCode = "STAFF";
 		public const string ResidentRoleCode = "RESIDENT";
 
+		private const string InviteManagersPermissionCode =
+			"tenant.managers.invite";
+		private const string RevokeManagerInvitationPermissionCode =
+			"tenant.managers.revoke_invitation";
+		private const string InviteStaffPermissionCode =
+			"tenant.staff.invite";
+		private const string RevokeStaffInvitationPermissionCode =
+			"tenant.staff.revoke_invitation";
+		private const string InviteResidentsPermissionCode =
+			"tenant.residents.invite";
+		private const string RevokeResidentInvitationPermissionCode =
+			"tenant.residents.revoke_invitation";
+
 		private const long SeederAdvisoryLockId = 7_398_260_110_100_001;
 
 		private readonly ApplicationDbContext _context;
@@ -261,6 +274,7 @@ namespace EzCondo.BackEndServer.Data
 			EnsureUniqueCodes(PlatformPermissionSeeds.Select(x => x.Code), "Platform permission");
 			EnsureUniqueCodes(TenantPermissionSeeds.Select(x => x.Code), "Tenant permission");
 			EnsureUniqueCodes(TenantRoleSeeds.Select(x => x.Code), "Tenant role");
+			ValidateTenantInvitationPermissionMatrix();
 
 			var tenantPermissionCodes = TenantPermissionSeeds
 				.Select(x => x.Code)
@@ -268,6 +282,21 @@ namespace EzCondo.BackEndServer.Data
 
 			foreach(var role in TenantRoleSeeds)
 			{
+				var duplicatePermissionCodes = role.PermissionCodes
+					.GroupBy(
+						x => x,
+						StringComparer.Ordinal)
+					.Where(x => x.Count() > 1)
+					.Select(x => x.Key)
+					.ToArray();
+
+				if (duplicatePermissionCodes.Length > 0)
+				{
+					throw new InvalidOperationException(
+						$"Role '{role.Code}' chứa permission bị lặp: " +
+						string.Join(", ", duplicatePermissionCodes));
+				}
+
 				var unknownCodes = role.PermissionCodes
 					.Where(x => !tenantPermissionCodes.Contains(x))
 					.ToArray();
@@ -277,6 +306,65 @@ namespace EzCondo.BackEndServer.Data
 					throw new InvalidOperationException(
 						$"Role '{role.Code}' contains unknown permission codes: " +
 						string.Join(", ", unknownCodes));
+				}
+			}
+		}
+
+		private static void ValidateTenantInvitationPermissionMatrix()
+		{
+			var invitationPermissionCodes = new HashSet<string>(
+				[
+					InviteManagersPermissionCode,
+					RevokeManagerInvitationPermissionCode,
+					InviteStaffPermissionCode,
+					RevokeStaffInvitationPermissionCode,
+					InviteResidentsPermissionCode,
+					RevokeResidentInvitationPermissionCode
+				],
+				StringComparer.Ordinal);
+
+			foreach (var role in TenantRoleSeeds)
+			{
+				IReadOnlyCollection<string>? expectedPermissionCodes =
+					role.Code switch
+					{
+						TenantAdminRoleCode =>
+						[
+							InviteManagersPermissionCode,
+							RevokeManagerInvitationPermissionCode
+						],
+
+						ManagerRoleCode =>
+						[
+							InviteStaffPermissionCode,
+							RevokeStaffInvitationPermissionCode
+						],
+
+						StaffRoleCode =>
+						[
+							InviteResidentsPermissionCode,
+							RevokeResidentInvitationPermissionCode
+						],
+
+						ResidentRoleCode => [],
+						_ => null
+					};
+
+				if (expectedPermissionCodes is null)
+				{
+					continue;
+				}
+
+				var actualPermissionCodes = role.PermissionCodes
+					.Where(invitationPermissionCodes.Contains)
+					.ToHashSet(StringComparer.Ordinal);
+
+				if (!actualPermissionCodes.SetEquals(expectedPermissionCodes))
+				{
+					throw new InvalidOperationException(
+						$"Role '{role.Code}' có ma trận permission lời mời không hợp lệ. " +
+						$"Mong đợi: {string.Join(", ", expectedPermissionCodes)}. " +
+						$"Thực tế: {string.Join(", ", actualPermissionCodes)}.");
 				}
 			}
 		}
@@ -360,17 +448,24 @@ namespace EzCondo.BackEndServer.Data
 			new("tenant.staff.read", "Xem nhân viên"),
 			new("tenant.staff.create", "Tạo hồ sơ nhân viên"),
 			new("tenant.staff.update", "Cập nhật hồ sơ nhân viên"),
-			new("tenant.staff.invite", "Mời nhân viên tham gia tenant"),
-			new("tenant.staff.revoke_invitation", "Thu hồi lời mời nhân viên"),
+			new(InviteStaffPermissionCode, "Mời nhân viên tham gia tenant"),
+			new(RevokeStaffInvitationPermissionCode, "Thu hồi lời mời nhân viên"),
 			new("tenant.staff.assign_role", "Thay đổi vai trò nhân viên"),
 			new("tenant.apartments.read", "Xem căn hộ trong tenant"),
 			new("tenant.apartments.create", "Tạo căn hộ"),
 			new("tenant.apartments.update", "Cập nhật căn hộ"),
 			new("tenant.apartments.read_own", "Xem căn hộ của bản thân"),
 			new("tenant.residents.read", "Xem cư dân"),
+			new(
+				InviteManagersPermissionCode,
+				"Mời quản lý tham gia tenant"),
+			new(
+				RevokeManagerInvitationPermissionCode,
+				"Thu hồi lời mời quản lý"),
 			new("tenant.residents.create", "Tạo hồ sơ cư dân"),
 			new("tenant.residents.update", "Cập nhật hồ sơ cư dân"),
-			new("tenant.residents.invite", "Mời cư dân tham gia tenant"),
+			new(RevokeResidentInvitationPermissionCode, "Thu hồi lời mời cư dân"),
+			new(InviteResidentsPermissionCode, "Mời cư dân tham gia tenant"),
 			new("tenant.contracts.read", "Xem hợp đồng căn hộ"),
 			new("tenant.contracts.create", "Tạo hợp đồng căn hộ"),
 			new("tenant.contracts.update", "Cập nhật hợp đồng căn hộ"),
@@ -442,8 +537,11 @@ namespace EzCondo.BackEndServer.Data
 					"tenant.settings.read", "tenant.settings.update",
 					"tenant.roles.read", "tenant.roles.create", "tenant.roles.update",
 					"tenant.roles.delete", "tenant.roles.assign",
-					"tenant.staff.read", "tenant.staff.update", "tenant.staff.invite",
-					"tenant.staff.revoke_invitation", "tenant.staff.assign_role",
+					InviteManagersPermissionCode,
+					RevokeManagerInvitationPermissionCode,
+					"tenant.staff.read",
+					"tenant.staff.update",
+					"tenant.staff.assign_role",
 					"tenant.apartments.read", "tenant.residents.read", "tenant.contracts.read",
 					"tenant.services.read", "tenant.billing_periods.read", "tenant.invoices.read",
 					"tenant.payments.read",
@@ -465,10 +563,10 @@ namespace EzCondo.BackEndServer.Data
 				{
 					"tenant.settings.read", "tenant.roles.read",
 					"tenant.staff.read", "tenant.staff.create", "tenant.staff.update",
-					"tenant.staff.invite", "tenant.staff.revoke_invitation", "tenant.staff.assign_role",
+					InviteStaffPermissionCode, RevokeStaffInvitationPermissionCode,
+					"tenant.staff.assign_role",
 					"tenant.apartments.read", "tenant.apartments.create", "tenant.apartments.update",
 					"tenant.residents.read", "tenant.residents.create", "tenant.residents.update",
-					"tenant.residents.invite",
 					"tenant.contracts.read", "tenant.contracts.create", "tenant.contracts.update",
 					"tenant.contracts.import", "tenant.contracts.renew",
 					"tenant.services.read", "tenant.services.create", "tenant.services.update",
@@ -499,13 +597,14 @@ namespace EzCondo.BackEndServer.Data
 				{
 					"tenant.apartments.read", "tenant.apartments.update",
 					"tenant.residents.read", "tenant.residents.create", "tenant.residents.update",
-					"tenant.residents.invite",
 					"tenant.contracts.read", "tenant.contracts.create", "tenant.contracts.update",
 					"tenant.contracts.import", "tenant.contracts.renew",
 					"tenant.services.read", "tenant.billing_periods.read",
 					"tenant.invoices.read", "tenant.invoices.update", "tenant.invoices.send",
 					"tenant.payments.read", "tenant.payments.reconcile",
 					"tenant.payroll_entries.read_own",
+					InviteResidentsPermissionCode,
+					RevokeResidentInvitationPermissionCode,
 					"tenant.complaints.read", "tenant.complaints.assign",
 					"tenant.complaints.update", "tenant.complaints.resolve",
 					"tenant.documents.read", "tenant.profile.read_own", "tenant.ai.use"

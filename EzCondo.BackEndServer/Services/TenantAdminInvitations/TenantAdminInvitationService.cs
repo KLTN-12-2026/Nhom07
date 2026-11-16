@@ -8,6 +8,7 @@ using EzCondo.BackEndServer.Infrastructure.Invitations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using EzCondo.BackEndServer.Infrastructure.Email;
 
 namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 {
@@ -15,11 +16,13 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 		ApplicationDbContext dbcontext,
 		UserManager<User> userManager,
 		IInvitationTokenService invitationTokenService,
+		IInvitationEmailSender invitationEmailSender,
 		TimeProvider timeProvider,
-		IHttpContextAccessor httpContextAccessor)
+		IHttpContextAccessor httpContextAccessor,
+		ILogger<TenantAdminInvitationService> logger)
 		: ITenantAdminInvitationService
 	{
-		private static readonly TimeSpan InvitationLifetime =
+		private static readonly TimeSpan InvitationTokenLifetime =
 			TimeSpan.FromHours(48);
 
 		public async Task<CreateTenantAdminInvitationResult> CreateAsync(
@@ -92,12 +95,6 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 					CreateTenantAdminInvitationFailure.TenantAdminRoleNotFound);
 			}
 
-			await ExpireOldInvitationsAsync(
-				tenantId,
-				tenantAdminRole.Id,
-				now,
-				cancellationToken);
-
 			var tenantAdminAlreadyExists =
 				await dbcontext.UserRoles
 					.AsNoTracking()
@@ -124,7 +121,6 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 						x.TenantId == tenantId &&
 						x.RoleId == tenantAdminRole.Id &&
 						!x.IsDeleted &&
-						x.ExpiresAt > now &&
 						(
 							x.Status == InvitationStatusEnum.PendingDelivery ||
 							x.Status == InvitationStatusEnum.Sent
@@ -226,7 +222,7 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 				TokenHash = generatedToken.Hash,
 				Status = InvitationStatusEnum.PendingDelivery,
 				CreatedAt = now,
-				ExpiresAt = now.Add(InvitationLifetime),
+				ExpiresAt = now.Add(InvitationTokenLifetime),
 				EmailSentAt = null,
 				LastEmailAttemptAt = null,
 				EmailSendAttemptCount = 0,
@@ -237,6 +233,20 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 
 			await dbcontext.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
+
+			var emailMessage = new InvitationEmailMessage(
+				RecipientEmail: email,
+				RecipientName: targetUser.FullName,
+				TenantName: tenant.LegalName,
+				TenantSlug: tenant.Slug,
+				RecipientType: InvitationRecipientType.TenantAdmin,
+				RawToken: generatedToken.Value,
+				TokenExpiresAt: invitation.ExpiresAt);
+
+			await SendAndTrackEmailAsync(
+				invitation,
+				emailMessage,
+				cancellationToken);
 
 			return CreateTenantAdminInvitationResult.Success(
 				new TenantAdminInvitationResponse(
@@ -249,6 +259,57 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 					invitation.ExpiresAt,
 					invitation.EmailSentAt,
 					invitation.EmailSendAttemptCount));
+		}
+
+		private async Task SendAndTrackEmailAsync(
+			Invitation invitation, 
+			InvitationEmailMessage emailMessage, 
+			CancellationToken cancellationToken)
+		{
+			invitation.EmailSendAttemptCount += 1;
+			invitation.LastEmailAttemptAt = timeProvider.GetUtcNow();
+
+			try
+			{
+				await invitationEmailSender.SendAsync(
+					emailMessage,
+					cancellationToken);
+
+				invitation.Status = InvitationStatusEnum.Sent;
+				invitation.EmailSentAt = timeProvider.GetUtcNow();
+				invitation.LastEmailErrorCode = null;
+			}
+			catch (OperationCanceledException)
+				when (cancellationToken.IsCancellationRequested)
+			{
+				invitation.Status = InvitationStatusEnum.PendingDelivery;
+				invitation.LastEmailErrorCode = "request_cancelled";
+
+				await dbcontext.SaveChangesAsync(CancellationToken.None);
+
+				throw;
+			}
+			catch(Exception exception)
+			{
+				invitation.Status = InvitationStatusEnum.PendingDelivery;
+				invitation.LastEmailErrorCode = ToEmailErrorCode(exception);
+
+				logger.LogError(
+					exception,
+					"Không thể gửi lời mời {InvitationId}.",
+					invitation.Id);
+			}
+
+			await dbcontext.SaveChangesAsync(CancellationToken.None);
+		}
+
+		private static string ToEmailErrorCode(Exception exception)
+		{
+			var code = exception.GetType().Name;
+
+			return code.Length <= 100
+				? code
+				: code[..100];
 		}
 
 		private static void ThrowIdentityFailure(
@@ -281,30 +342,6 @@ namespace EzCondo.BackEndServer.Services.TenantAdminInvitations
 				x =>
 					x.Code == "DuplicateEmail" ||
 					x.Code == "DuplicateUserName");
-		}
-
-		private async Task ExpireOldInvitationsAsync(
-			Guid tenantId, 
-			Guid roleId, 
-			DateTimeOffset now, 
-			CancellationToken cancellationToken)
-		{
-			await dbcontext.Invitations
-				.Where(
-					x =>
-						x.TenantId == tenantId &&
-						x.RoleId == roleId &&
-						!x.IsDeleted &&
-						x.ExpiresAt <= now &&
-						(
-							x.Status == InvitationStatusEnum.PendingDelivery ||
-							x.Status == InvitationStatusEnum.Sent
-						))
-				.ExecuteUpdateAsync(
-					setter => setter.SetProperty(
-						x => x.Status,
-						InvitationStatusEnum.Expired),
-					cancellationToken);
 		}
 
 		private Guid GetCurrentUserId()

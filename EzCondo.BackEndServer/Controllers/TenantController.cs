@@ -46,7 +46,7 @@ namespace EzCondo.BackEndServer.Controllers
 						"Không tìm thấy gói dịch vụ.")),
 
 				CreateTenantFailure.SubscriptionPlanUnavailable =>
-					NotFound(CreateProblem(
+					Conflict(CreateProblem(
 						StatusCodes.Status409Conflict,
 						"Subscription_plan_unavailable",
 						"Gói dịch vụ đã ngừng cung cấp.")),

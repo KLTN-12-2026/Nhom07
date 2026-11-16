@@ -1,10 +1,13 @@
 ﻿using EzCondo.BackEndServer.Contracts.SubscriptionPlans;
 using EzCondo.BackEndServer.Services.SubscriptionPlans;
 using Microsoft.AspNetCore.Mvc;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EzCondo.BackEndServer.Controllers
 {
 	[ApiController]
+	[Authorize(Policy = AuthPolicies.PlatformScope)]
 	[Route("api/platform/subscription-plans")]
 	public class SubscriptionPlansController(
 		ISubscriptionPlanService subscriptionService) 
