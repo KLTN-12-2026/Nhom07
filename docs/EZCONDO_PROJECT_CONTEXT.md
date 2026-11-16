@@ -1,6 +1,6 @@
 # EzCondo — Ngữ cảnh hệ thống và quyết định nghiệp vụ
 
-> Cập nhật: 21/10/2026.
+> Cập nhật: 11/11/2026.
 > Mục đích: Ngữ cảnh lâu dài để hỗ trợ thiết kế, lập trình, review, kiểm thử và viết tài liệu khóa luận EzCondo.
 > Nguồn: Markdown ban đầu, năm sơ đồ phân rã chức năng và các quyết định của chủ dự án trong cuộc trao đổi.
 > Tài liệu mô tả yêu cầu và định hướng; không xác nhận các chức năng đã được triển khai trong mã nguồn.
@@ -293,3 +293,21 @@ Các điểm này không thay đổi những quyết định đã chốt; chỉ 
 - Các quyết định trong cuộc trao đổi: STAFF chung; Chủ chung cư = TENANT_ADMIN; Quản lý lập/trình/phát hành tài chính sau phê duyệt; đổi vai trò nhân viên rồi báo cáo; hai scope độc lập và Platform chỉ can thiệp Tenant khi Chủ chung cư cho phép/yêu cầu hỗ trợ.
 
 Nội dung chức năng từ các sơ đồ đã được tổng hợp ở đây để giảm phụ thuộc vào đường dẫn nguồn bên ngoài repository.
+
+## 17. Quyết định triển khai SmarterASP.NET
+
+Ngày 11/11/2026, chủ dự án chọn SmarterASP.NET làm Windows hosting/IIS dự kiến cho EzCondo. Source chính cần triển khai là `EzCondo_Integration`; project backend cần publish là `EzCondo.BackEndServer` (.NET 8, EF Core 8, Npgsql/PostgreSQL).
+
+Giai đoạn đầu chỉ nhằm đưa Swagger và các chức năng đã xây dựng lên môi trường demo/staging để kiểm tra. Giữ environment là `Production`, bật Swagger bằng một cờ cấu hình riêng, dùng PostgreSQL do hosting cấp, Web Deploy từ Visual Studio 2022, secret qua biến môi trường và HTTPS bằng Managed Let's Encrypt. Ưu tiên kiểm tra bằng temporary URL trước khi gắn `api-dev.<domain>`.
+
+Đây không phải xác nhận hệ thống sẵn sàng production. Authentication/authorization, login/logout và permission policy vẫn đang được chủ dự án hoãn; endpoint Platform chưa an toàn để phát hành công khai cho đến khi hoàn thiện và retest. Chi tiết thao tác, biến môi trường, kiểm tra và xử lý lỗi nằm trong `docs/SMARTERASP_DEPLOYMENT.md`.
+
+### Quy tắc Tenant Admin đầu tiên
+
+- Mỗi tenant chỉ được có tối đa một tài khoản `TENANT_ADMIN` đang hoạt động hoặc một lời mời `TENANT_ADMIN` còn hiệu lực.
+- Platform Admin tạo tài khoản Tenant Admin từ giao diện; không cấu hình tài khoản này trong source code hoặc `appsettings`.
+- Tài khoản được tạo ban đầu với trạng thái `Inviting`, chưa có mật khẩu và chưa được gán role hoạt động.
+- Người nhận tự thiết lập mật khẩu khi chấp nhận lời mời.
+- Role `TENANT_ADMIN` chỉ được gán sau khi lời mời được chấp nhận thành công.
+- Không được tạo lời mời mới nếu tenant đã có `TENANT_ADMIN` hoạt động hoặc lời mời Tenant Admin chưa hết hạn/chưa bị thu hồi.
+- Việc thay thế Chủ chung cư phải thông qua luồng thu hồi, hết hạn hoặc chuyển quyền riêng; không tự động tạo Tenant Admin thứ hai.

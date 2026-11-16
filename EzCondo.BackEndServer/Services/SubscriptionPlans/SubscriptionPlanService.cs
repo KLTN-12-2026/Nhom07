@@ -4,6 +4,7 @@ using EzCondo.BackEndServer.Contracts.SubscriptionPlans;
 using EzCondo.BackEndServer.Data;
 using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
 using Microsoft.EntityFrameworkCore;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
 
 namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 {
@@ -120,11 +121,12 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 		private Guid GetCurrentUserId()
 		{
 			var value = httpContextAccessor.HttpContext?.User
-				.FindFirstValue(ClaimTypes.NameIdentifier);
+				.FindFirstValue(AppClaimTypes.Subject);
 
 			return Guid.TryParse(value, out var userId)
 				? userId
-				: throw new UnauthorizedAccessException("Không xác định được tài khoản Platform hiện tại.");
+				: throw new UnauthorizedAccessException(
+					"Không xác định được tài khoản Platform hiện tại.");
 		}
 
 		private static SubscriptionPlanResponse ToResponse(SubscriptionPlan subscriptionPlan)

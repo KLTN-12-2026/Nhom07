@@ -1,10 +1,13 @@
 ﻿using EzCondo.BackEndServer.Contracts.Tenants;
 using EzCondo.BackEndServer.Services.Tenants;
 using Microsoft.AspNetCore.Mvc;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EzCondo.BackEndServer.Controllers
 {
 	[ApiController]
+	[Authorize(Policy = AuthPolicies.PlatformScope)]
 	[Route("api/platform/tenants")]
 	public sealed class TenantController(
 		ITenantService tenantService) 
@@ -43,7 +46,7 @@ namespace EzCondo.BackEndServer.Controllers
 						"Không tìm thấy gói dịch vụ.")),
 
 				CreateTenantFailure.SubscriptionPlanUnavailable =>
-					NotFound(CreateProblem(
+					Conflict(CreateProblem(
 						StatusCodes.Status409Conflict,
 						"Subscription_plan_unavailable",
 						"Gói dịch vụ đã ngừng cung cấp.")),

@@ -5,6 +5,7 @@ using EzCondo.BackEndServer.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Security.Claims;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
 
 namespace EzCondo.BackEndServer.Services.Tenants
 {
@@ -261,7 +262,7 @@ namespace EzCondo.BackEndServer.Services.Tenants
 		private Guid GetCurrentUserId()
 		{
 			var value = httpContextAccessor.HttpContext?.User
-				.FindFirstValue(ClaimTypes.NameIdentifier);
+				.FindFirstValue(AppClaimTypes.Subject);
 
 			return Guid.TryParse(value, out var userId)
 				? userId
