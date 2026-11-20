@@ -167,12 +167,12 @@ namespace EzCondo.BackEndServer.Services.Tenants
 		{
 			return new TenantResponse(
 				tenant.Id,
-				tenant.Code,
-				tenant.Slug,
 				tenant.LegalName,
 				tenant.TaxCode,
 				tenant.Address,
-				tenant.TrialEndsAt!.Value,
+				tenant.Code,
+				tenant.Slug,
+				tenant.TrialEndsAt,
 				tenant.Status,
 				new TenantSubscriptionResponse(
 					subscription.Id,

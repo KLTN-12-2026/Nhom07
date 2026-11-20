@@ -4,6 +4,8 @@ namespace EzCondo.BackEndServer.Data.Enums
 {
 	public enum SubscriptionInvoiceStatus
 	{
+		[PgName("draft")]
+		Draft,
 		[PgName("issued")]
 		Issued,
 		[PgName("partially_paid")]

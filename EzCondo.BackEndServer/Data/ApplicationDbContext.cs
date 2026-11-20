@@ -23,6 +23,8 @@ namespace EzCondo.BackEndServer.Data
 		public DbSet<Tenant> Tenants => Set<Tenant>();
 		public DbSet<Apartment> Apartments => Set<Apartment>();
 		public DbSet<Invitation> Invitations => Set<Invitation>();
+		public DbSet<SubscriptionInvoice> SubscriptionInvoices => Set<SubscriptionInvoice>();
+		public DbSet<SubscriptionRenewalRequest> SubscriptionRenewalRequests => Set<SubscriptionRenewalRequest>();
 		public DbSet<Invoice> Invoices => Set<Invoice>();
 		public DbSet<InvoiceDetail> InvoiceDetails => Set<InvoiceDetail>();
 		public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
@@ -47,6 +49,7 @@ namespace EzCondo.BackEndServer.Data
 			b.HasPostgresExtension("citext");
 
 			b.HasPostgresEnum<SubscriptionInvoiceStatus>(schema: "platform", name: "subscription_invoice_status");
+			b.HasPostgresEnum<SubscriptionRenewalRequestStatus>(schema: "platform", name: "subscription_renewal_request_status");
 			b.HasPostgresEnum<SubscriptionPaymentAttemptStatus>(schema: "platform", name: "subscription_payment_attempt_status");
 			b.HasPostgresEnum<SubscriptionStatusEnum>(schema: "platform", name: "subscription_status_enum");
 			b.HasPostgresEnum<TenantStatusEnum>(schema: "platform", name: "tenant_status_enum");
@@ -64,6 +67,12 @@ namespace EzCondo.BackEndServer.Data
 			b.HasPostgresEnum<PayoutItemStatusEnum>(schema: "payment", name: "payout_item_status_enum");
 			b.HasPostgresEnum<ProcessingStatusEnum>(schema: "payment", name: "processing_status_enum");
 			b.HasPostgresEnum<ProviderOwnerScope>(schema: "payment", name: "provider_owner_scope");
+
+			b.HasSequence<long>(
+					"subscription_invoice_no_seq",
+					"platform")
+				.StartsAt(1)
+				.IncrementsBy(1);
 
 			b.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 		}

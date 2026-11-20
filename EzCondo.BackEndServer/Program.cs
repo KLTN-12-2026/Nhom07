@@ -18,6 +18,11 @@ using EzCondo.BackEndServer.Services.TenantAdminInvitations;
 using EzCondo.BackEndServer.Infrastructure.Email.Options;
 using EzCondo.BackEndServer.Infrastructure.Email;
 using EzCondo.BackEndServer.Infrastructure.Invitations.Options;
+using EzCondo.BackEndServer.Services.Invitations;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions.Options;
+using EzCondo.BackEndServer.Services.SubscriptionRenewals;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions;
+using EzCondo.BackEndServer.Services.SubscriptionInvoices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +31,9 @@ var builder = WebApplication.CreateBuilder(args);
 //Đăng ký Cors
 const string ReactCorsPolicy = "ReactApp";
 
-var allowedOrigins = builder.Configuration.GetSection("Cors: AllowedOrigins").Get<string[]>()
+var allowedOrigins = builder.Configuration
+	.GetSection("Cors:AllowedOrigins")
+	.Get<string[]>()
 	?? [];
 
 builder.Services.AddCors(options =>
@@ -61,6 +68,23 @@ builder.Services
 
 //Đăng ký TimeProvider
 builder.Services.AddSingleton(TimeProvider.System);
+
+//Đăng ký SubscriptionRenewalReminderOptions
+builder.Services
+	.AddOptions<SubscriptionRenewalReminderOptions>()
+	.Bind(
+		builder.Configuration.GetSection(
+			SubscriptionRenewalReminderOptions.SectionName))
+	.Validate(
+		x => x.CheckIntervalHours is >= 1 and <= 24,
+		"CheckIntervalHours phải từ 1 đến 24 giờ.")
+	.Validate(
+		x => x.TrialReminderDays is >= 1 and <= 29,
+		"TrialReminderDays phải từ 1 đến 29 ngày.")
+	.Validate(
+		x => x.PaidReminderMonths is >= 1 and <= 3,
+		"PaidReminderMonths phải từ 1 đến 3 tháng.")
+	.ValidateOnStart();
 
 //Đăng ký Invitation service
 builder.Services.AddSingleton<
@@ -129,6 +153,30 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 //Đăng ký TenantAdminInvitationService
 builder.Services.AddScoped<
 	ITenantAdminInvitationService, TenantAdminInvitationService>();
+
+//Đăng ký InvitationAcceptanceService
+builder.Services.AddScoped<IInvitationAcceptanceService, InvitationAcceptanceService>();
+
+//Đăng ký renewal Service
+builder.Services.AddScoped<
+	ITenantSubscriptionRenewalService,
+	TenantSubscriptionRenewalService>();
+
+//Đăng ký pending review service
+builder.Services.AddScoped<
+	IPlatformSubscriptionRenewalService,
+	PlatformSubscriptionRenewalService>();
+
+//Đăng ký service tạo hóa đơn nháp cho subscription
+builder.Services.AddScoped<
+	ISubscriptionInvoiceService,
+	SubscriptionInvoiceService>();
+
+// Đăng ký service đọc hóa đơn subscription cho Tenant Admin
+builder.Services.AddScoped<
+	ITenantSubscriptionInvoiceService,
+	TenantSubscriptionInvoiceService>();
+
 //Đăng ký handler
 builder.Services.AddScoped<JwtBearerEventsHandler>();
 
@@ -232,6 +280,7 @@ var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.EnableDynamicJson();
 //Map enums
 dataSourceBuilder.MapEnum<SubscriptionInvoiceStatus>("platform.subscription_invoice_status");
+dataSourceBuilder.MapEnum<SubscriptionRenewalRequestStatus>("platform.subscription_renewal_request_status");
 dataSourceBuilder.MapEnum<SubscriptionPaymentAttemptStatus>("platform.subscription_payment_attempt_status");
 dataSourceBuilder.MapEnum<SubscriptionStatusEnum>("platform.subscription_status_enum");
 dataSourceBuilder.MapEnum<TenantStatusEnum>("platform.tenant_status_enum");
@@ -256,6 +305,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
 option.UseNpgsql(dataSource));
 
 builder.Services.AddScoped<DbInitializer>();
+
+builder.Services.AddScoped<
+	ISubscriptionRenewalReminderProcessor,
+	SubscriptionRenewalReminderProcessor>();
+
+var renewalReminderEnabled =
+	builder.Configuration.GetValue<bool>(
+		$"{SubscriptionRenewalReminderOptions.SectionName}:Enabled");
+
+if (renewalReminderEnabled)
+{
+	builder.Services.AddHostedService<
+		SubscriptionRenewalReminderWorker>();
+}
 
 //Đăng ký service cho SubscriptionPlan
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();

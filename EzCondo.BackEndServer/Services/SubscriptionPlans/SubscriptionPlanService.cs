@@ -118,6 +118,107 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 			return ToResponse(subscriptionPlan);
 		}
 
+		public async Task<GetSubscriptionPlanTenantsResult> GetTenantsByPlanAsync(
+			Guid planId, 
+			GetSubscriptionPlanTenantsRequest request, 
+			CancellationToken cancellationToken = default)
+		{
+			ArgumentNullException.ThrowIfNull(request);
+
+			if(request.PageNumber < 1)
+			{
+				throw new ArgumentOutOfRangeException(nameof(request.PageNumber));
+			}
+
+			if(request.PageSize is < 1 or > 100)
+			{
+				throw new ArgumentOutOfRangeException(nameof(request.PageSize));
+			}
+
+			var plan = await dbcontext.SubscriptionPlans
+				.AsNoTracking()
+				.Where(x =>
+					x.Id == planId &&
+					!x.IsDeleted)
+				.Select(x => new
+				{
+					x.Id,
+					x.Name,
+					x.IsAvailable
+				})
+				.SingleOrDefaultAsync(cancellationToken);
+
+			if(plan is null)
+			{
+				return GetSubscriptionPlanTenantsResult.Failed(
+					GetSubscriptionPlanTenantsFailure.PlanNotFound);
+			}
+
+			var currentSubscriptions = dbcontext.Subscriptions
+				.AsNoTracking()
+				.Where(x =>
+					x.PlanId == planId &&
+					(
+						x.Status == Data.Enums.SubscriptionStatusEnum.Trial ||
+						x.Status == Data.Enums.SubscriptionStatusEnum.Active ||
+						x.Status == Data.Enums.SubscriptionStatusEnum.PastDue
+					));
+
+			var totalCount = await currentSubscriptions
+				.CountAsync(cancellationToken);
+
+			var totalPages = totalCount == 0
+				? 0
+				: (int)Math.Ceiling(
+					totalCount / (double)request.PageSize);
+
+			IReadOnlyCollection<SubscriptionPlanTenantItemResponse> items;
+
+			if(
+				totalCount == 0 ||
+				request.PageNumber > totalPages)
+			{
+				items = Array.Empty<SubscriptionPlanTenantItemResponse>();
+			}
+			else
+			{
+				var skip = checked(
+					(request.PageNumber - 1) *
+					request.PageSize);
+
+				items = await currentSubscriptions
+					.OrderBy(x => x.Tenant.LegalName)
+					.ThenBy(x => x.Tenant.Code)
+					.ThenBy(x => x.Id)
+					.Skip(skip)
+					.Take(request.PageSize)
+					.Select(x =>
+						new SubscriptionPlanTenantItemResponse(
+							x.TenantId,
+							x.Tenant.Code,
+							x.Tenant.Slug,
+							x.Tenant.LegalName,
+							x.Tenant.Status,
+							x.Id,
+							x.Status,
+							x.BillingCycleMonthsSnapshot,
+							x.StartsAt,
+							x.EndsAt))
+					.ToListAsync(cancellationToken);
+			}
+
+			return GetSubscriptionPlanTenantsResult.Success(
+				new SubscriptionPlanTenantsResponse(
+					plan.Id,
+					plan.Name,
+					plan.IsAvailable,
+					request.PageNumber,
+					request.PageSize,
+					totalCount,
+					totalPages,
+					items));
+		}
+
 		private Guid GetCurrentUserId()
 		{
 			var value = httpContextAccessor.HttpContext?.User

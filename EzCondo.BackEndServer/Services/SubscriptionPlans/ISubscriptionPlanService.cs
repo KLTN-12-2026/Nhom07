@@ -23,5 +23,10 @@ namespace EzCondo.BackEndServer.Services.SubscriptionPlans
 		Task<SubscriptionPlanResponse?> DiscontinueAsync(
 			Guid id,
 			CancellationToken cancellationToken = default);
+
+		Task<GetSubscriptionPlanTenantsResult> GetTenantsByPlanAsync(
+			Guid planId,
+			GetSubscriptionPlanTenantsRequest request,
+			CancellationToken cancellationToken = default);
 	}
 }

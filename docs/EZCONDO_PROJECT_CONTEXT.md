@@ -1,6 +1,6 @@
 # EzCondo — Ngữ cảnh hệ thống và quyết định nghiệp vụ
 
-> Cập nhật: 11/11/2026.
+> Cập nhật: 20/11/2026.
 > Mục đích: Ngữ cảnh lâu dài để hỗ trợ thiết kế, lập trình, review, kiểm thử và viết tài liệu khóa luận EzCondo.
 > Nguồn: Markdown ban đầu, năm sơ đồ phân rã chức năng và các quyết định của chủ dự án trong cuộc trao đổi.
 > Tài liệu mô tả yêu cầu và định hướng; không xác nhận các chức năng đã được triển khai trong mã nguồn.
@@ -86,6 +86,7 @@ Không tự ý chuyển ví dụ hoặc kiến trúc sang Java/Spring.
 
 - Khởi tạo hồ sơ chung cư; nhập đại diện pháp lý, cấp mã và slug, cập nhật liên hệ.
 - Thiết lập thời gian dùng thử.
+- Khi tạo tenant, Quản trị viên chọn một gói dịch vụ đang khả dụng làm gói dùng thử theo thông tin đã thống nhất với Chủ chung cư; backend tạo subscription trạng thái `Trial` cho gói đó. Thời hạn trial là chính sách cố định 30 ngày, client không được tự chọn ngày kết thúc.
 - Kích hoạt, tạm ngưng và khôi phục tenant.
 - Xem lịch sử trạng thái tenant.
 - Mời Tenant Admin.
@@ -103,7 +104,38 @@ Không tự ý chuyển ví dụ hoặc kiến trúc sang Java/Spring.
 - Theo dõi công nợ; gửi nhắc nhở thanh toán.
 - Xuất báo cáo doanh thu.
 
+Phạm vi được chủ dự án chọn để triển khai theo từng vertical slice trong Sprint 1:
+
+1. Tạo, cập nhật, xóa mềm và phát hành hóa đơn subscription của tenant. Hóa đơn đã phát hành không có chức năng hủy trong phạm vi đã chốt.
+2. Tạo và quản lý link/QR thanh toán PayOS.
+3. Nhận webhook PayOS, xác minh và ghi nhận tiền vào hóa đơn/subscription.
+4. Báo cáo tổng hợp đơn giản được gộp vào chức năng “Thống kê doanh thu”, thuộc nhóm “Thống kê nền tảng” và sẽ xây dựng sau.
+
+Ưu tiên tận dụng các bảng `subscription_invoices`, `subscription_payment_attempts`, `subscription_payment_allocations`, `provider_accounts`, `payment_requests`, `payment_transactions` và `webhook_events` hiện có; hạn chế tối đa phát sinh bảng mới. Bộ bốn bảng trong `docs/proposals/platform-payments` là proposal cũ, không tự động được tích hợp nếu trùng trách nhiệm với model hiện tại.
+
 Thanh toán thương mại là quan hệ giữa nhà cung cấp EzCondo và khách hàng tenant. Quyền xử lý giao dịch Platform không tạo quyền xử lý hóa đơn hoặc tiền lương nội bộ của Tenant. Quy trình phê duyệt hoàn tiền Platform chưa được chốt.
+
+#### Luồng gia hạn subscription đã chốt
+
+- Thời hạn subscription dùng quy ước nửa mở `[StartsAt, EndsAt)`: có hiệu lực từ `StartsAt` và hết hiệu lực tại `EndsAt`. Kỳ kế tiếp bắt đầu đúng bằng `EndsAt` của kỳ hiện tại.
+- Thanh toán lần đầu trong trial không cắt ngắn trial; kỳ trả phí bắt đầu khi trial kết thúc. Thanh toán gia hạn không cắt ngắn kỳ đang dùng; kỳ mới bắt đầu khi kỳ hiện tại kết thúc.
+- Trial 30 ngày được nhắc gia hạn trước 7 ngày. Subscription trả phí được nhắc trước một tháng theo lịch bằng `EndsAt.AddMonths(-1)`.
+- Worker tạo yêu cầu gia hạn chạy một lượt khi backend khởi động và sau đó mỗi 6 giờ; dùng cửa sổ catch-up thay vì chỉ so sánh đúng ngày nhắc, đồng thời dựa vào unique constraint để bảo đảm idempotent.
+- Worker chỉ xử lý cặp trạng thái đồng bộ `Tenant Trial + Subscription Trial` và `Tenant Active + Subscription Active`; tenant `Suspended` không được tạo yêu cầu. Trạng thái tenant/subscription không đồng bộ phải được bỏ qua và ghi warning, không tự sửa.
+- Yêu cầu gia hạn vẫn được tạo nếu tenant chưa có Tenant Admin hoạt động để sự kiện không bị mất; worker ghi warning để Platform có thể theo dõi. Giai đoạn đầu không gửi email hoặc SignalR, bản ghi renewal request chính là thông báo bền vững trên dashboard.
+- Ngày nghiệp vụ của subscription/reminder dùng UTC+7. Tenant mới phải tính `StartsAt`/`EndsAt` theo ngày Việt Nam, không dùng trực tiếp ngày UTC.
+- Tenant Admin chọn một `SubscriptionPlanId` đang khả dụng; billing cycle và giá được backend lấy từ plan. Client không gửi giá được tin cậy.
+- Cần một workflow/yêu cầu gia hạn bền vững để lưu quyết định của Tenant Admin, snapshot plan/giá/kỳ, trạng thái Platform review, invoice liên quan và trạng thái chờ kích hoạt. Ưu tiên một bảng `platform.subscription_renewal_requests`, không tạo thêm bảng notification chung chỉ cho luồng này.
+- Tenant Admin xác nhận chỉ tạo đề xuất có snapshot. Platform Admin xác nhận mới tạo hóa đơn nháp với audit Platform Admin thật; thao tác phát hành/gửi hóa đơn là bước riêng.
+- Webhook thanh toán thành công ghi nhận hóa đơn đã trả và yêu cầu ở trạng thái chờ kích hoạt; background worker kích hoạt subscription đúng `BillingPeriodFrom`.
+- Hóa đơn renewal dùng vòng đời nghiệp vụ tối giản `Draft -> Issued -> Paid`. Platform Admin chỉ được phát hành hóa đơn `Draft` chưa xóa mềm; thao tác phát hành ghi nhận người/thời điểm phát hành và đồng thời chuyển renewal từ `InvoiceDraftCreated` sang `InvoiceIssued`. Hóa đơn đã phát hành không được thu hồi, hủy hoặc sửa dữ liệu thương mại.
+- Hóa đơn renewal nháp không được sửa gói, giá, currency, chu kỳ hoặc kỳ thanh toán vì đây là snapshot Tenant Admin đã xác nhận. Nếu draft sai, Platform Admin chỉ được xóa mềm; trong cùng giao dịch phải gỡ liên kết invoice, xóa audit review tương ứng và đưa renewal về `AwaitingPlatformReview` để xử lý lại. Nếu cần đổi lựa chọn thương mại thì Tenant Admin phải xác nhận lại.
+- Thông báo thanh toán trên UI giai đoạn đầu được suy ra từ hóa đơn `Issued` chưa thanh toán đủ, không tạo bảng notification riêng. Endpoint Tenant trả dữ liệu hành động cần thực hiện, hạn thanh toán và nút thanh toán; thông báo tự biến mất khi invoice `Paid`.
+- Tenant Admin bấm Thanh toán chỉ khởi tạo hoặc lấy lại PayOS payment link/QR cho số tiền còn thiếu; không tự động trừ tiền và backend không đọc/kiểm tra được số dư tài khoản người trả. Tài khoản/kênh PayOS nhận tiền thuộc Platform. Chỉ webhook PayOS đã xác minh mới được ghi nhận tiền và chuyển invoice sang `Paid` khi `PaidAmount >= TotalAmount`.
+- Để tối giản trạng thái invoice, thanh toán thiếu không chuyển invoice sang `PartiallyPaid`: invoice vẫn `Issued`, còn `PaidAmount` và trạng thái `Underpaid` của payment request phản ánh số tiền đã nhận/còn thiếu. Quá hạn được suy ra từ `Status == Issued && DueAt <= now`, không bắt buộc chuyển invoice sang `OverDue`. Các enum `PartiallyPaid`, `OverDue`, `Cancelled` hiện hữu được giữ để tương thích database nhưng service của luồng renewal không tạo các chuyển trạng thái đó.
+- Hủy hoặc hết hạn PayOS payment link không hủy invoice. Tenant Admin có thể tạo payment link mới cho invoice vẫn `Issued` và còn nợ.
+- Nếu Tenant Admin từ chối gia hạn, hệ thống dự kiến nhắc hết hạn trước 7 ngày và vào ngày cuối cùng để tenant chuẩn bị rút khỏi hệ thống. Sau khi hết hạn, một luồng đóng tenant an toàn sẽ chuyển tenant sang trạng thái `Expired` và từ chối đăng nhập. Luồng này được hoãn để thiết kế/triển khai riêng; `TenantStatusEnum` hiện chưa có `Expired` nên không được mô tả là đã hoàn thành.
+- `Expired` được định hướng là hết quyền sử dụng và có thể phục hồi/gia hạn lại, khác với `Closed` mang tính đóng vĩnh viễn.
 
 ### 6.4. Hỗ trợ và sự cố
 
@@ -311,3 +343,52 @@ Giai đoạn đầu chỉ nhằm đưa Swagger và các chức năng đã xây d
 - Role `TENANT_ADMIN` chỉ được gán sau khi lời mời được chấp nhận thành công.
 - Không được tạo lời mời mới nếu tenant đã có `TENANT_ADMIN` hoạt động hoặc lời mời Tenant Admin chưa hết hạn/chưa bị thu hồi.
 - Việc thay thế Chủ chung cư phải thông qua luồng thu hồi, hết hạn hoặc chuyển quyền riêng; không tự động tạo Tenant Admin thứ hai.
+
+### Quy tắc lời mời tài khoản qua email
+
+#### Ma trận tác nhân được phép mời
+
+| Người gửi lời mời | Scope | Đối tượng duy nhất được mời |
+|---|---|---|
+| Quản trị viên Platform | `platform` | `TENANT_ADMIN` của tenant được chọn |
+| `TENANT_ADMIN` | `tenant` | `MANAGER` trong chính tenant đó |
+| `MANAGER` | `tenant` | `STAFF` trong chính tenant đó |
+| `STAFF` | `tenant` | `RESIDENT` trong chính tenant đó |
+| `RESIDENT` | `tenant` | Không được mời tài khoản |
+
+- Chỉ luồng `Platform -> TENANT_ADMIN` được đi từ scope Platform sang scope Tenant. Quản trị viên Platform không được mời trực tiếp `MANAGER`, `STAFF` hoặc `RESIDENT`.
+- Các lời mời trong scope Tenant phải giữ nguyên `TenantId`; người gửi không được mời người dùng vào tenant khác.
+- Mỗi tenant chỉ có một `TENANT_ADMIN`. Chưa đặt giới hạn một người cho các role `MANAGER`, `STAFF` và `RESIDENT`.
+- Role đích được backend suy ra từ loại endpoint/người gửi; không nhận và tin `RoleCode` do client tùy ý gửi.
+- Ma trận trên là ràng buộc nghiệp vụ nhạy cảm, phải kiểm tra tại service cùng với permission và tenant context; không chỉ dựa vào việc ẩn nút trên UI hoặc permission mặc định trong seed.
+
+#### Vòng đời lời mời và token
+
+- Email đã gửi có thể tiếp tục nằm trong hộp thư và bản ghi invitation được giữ để audit, nhưng token thiết lập mật khẩu không được có hiệu lực vĩnh viễn.
+- Token phải được tạo bằng bộ sinh số ngẫu nhiên mật mã, chỉ lưu hash trong database, chỉ dùng một lần và có thời hạn. Mốc khởi đầu thống nhất là 48 giờ; về sau có thể cấu hình thời hạn riêng theo loại tác nhân nếu có yêu cầu nghiệp vụ.
+- Một invitation đang ở `PendingDelivery` hoặc `Sent` là invitation đang hoạt động. Không được tạo invitation hoạt động thứ hai cho cùng đối tượng và cùng mục đích.
+- Cho phép người có thẩm quyền gửi lại cùng luồng sau thời gian chờ khi email thất lạc hoặc token hết hạn. Gửi lại phải sinh token mới, thay hash và thời hạn, đồng thời vô hiệu token cũ; không gửi lại token cũ và không tự động gửi dồn dập.
+- Invitation phải thất bại khi đã `Accepted`, `Revoked`, `Expired`, bị xóa mềm, sai tenant, sai người nhận hoặc token/hash không khớp.
+- `Sent` chỉ có nghĩa SMTP đã chấp nhận thông điệp để chuyển tiếp, không chứng minh email đã vào hộp thư. Trạng thái nghiệp vụ invitation phải được phân biệt với dữ liệu giao nhận email như `EmailSentAt`, `LastEmailAttemptAt`, số lần thử và mã lỗi.
+- Khi chấp nhận, backend kiểm tra token và trạng thái, thiết lập mật khẩu qua ASP.NET Core Identity, xác nhận email, kích hoạt tài khoản, gán đúng role đích và đánh dấu `Accepted` trong một giao dịch nhất quán. Client không được quyết định role được gán.
+
+#### Kênh nhận lời mời
+
+- `TENANT_ADMIN` và `MANAGER` thiết lập mật khẩu trên web portal.
+- `STAFF` và `RESIDENT` thiết lập mật khẩu trên ứng dụng mobile. Email của hai tác nhân này phải có liên kết tải ứng dụng chính thức, hướng dẫn cài/mở ứng dụng trước, sau đó mở liên kết thiết lập mật khẩu.
+- Liên kết mobile định hướng dùng HTTPS Universal Links/App Links đã xác minh domain, có trang web fallback khi chưa cài ứng dụng; không chỉ dùng custom URL scheme.
+- Cùng một hạ tầng gửi email nhưng template và đích liên kết được chọn theo loại người nhận. Không hard-code toàn bộ hệ thống vào phương thức chỉ dành cho Tenant Admin.
+
+## 18. Backlog bắt buộc trước khi kết thúc Sprint 1
+
+Sprint 1 tập trung vào các chức năng của Quản trị viên Platform. Chủ dự án xác nhận tạm hoãn các hạng mục dưới đây để tiếp tục xây dựng nhóm chức năng Platform Admin, nhưng phải chủ động nhắc lại và hoàn thiện hoặc chốt kế hoạch xử lý trước khi xác nhận Sprint 1 hoàn thành:
+
+1. Xây dựng chức năng đổi mật khẩu an toàn bằng ASP.NET Core Identity (`UserManager.ChangePasswordAsync`); không cập nhật trực tiếp `password_hash` trong database.
+2. Bổ sung endpoint logout cho Tenant dùng chung cơ chế `LogoutAllAsync`; hiện source mới có endpoint logout cho Platform.
+3. Bổ sung chức năng thu hồi invitation.
+4. Bổ sung chức năng gửi lại invitation bằng token mới, thay hash và thời hạn, đồng thời vô hiệu token cũ.
+5. Bổ sung cơ chế chuyển invitation hết hạn sang `Expired`, gồm cả chiến lược xử lý theo request hoặc background job phù hợp.
+6. Hoàn thiện permission-based authorization và thực thi permission `platform.tenant_invitations.create` thay vì chỉ kiểm tra Platform scope.
+7. Xây dựng giao diện `/accept-invitation` để đọc token từ URL fragment, thiết lập mật khẩu và điều hướng sang Tenant Login.
+
+Không mô tả luồng invitation, authentication/authorization hoặc Sprint 1 là hoàn tất đầy đủ khi các hạng mục liên quan ở trên chưa được xử lý hoặc chưa có quyết định hoãn tiếp theo được chủ dự án xác nhận.

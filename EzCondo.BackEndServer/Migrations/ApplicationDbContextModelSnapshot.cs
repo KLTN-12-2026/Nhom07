@@ -28,8 +28,9 @@ namespace EzCondo.BackEndServer.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "payout_item_status_enum", new[] { "created", "processing", "succeeded", "failed", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "processing_status_enum", new[] { "received", "processing", "succeeded", "failed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment", "provider_owner_scope", new[] { "platform", "tenant" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_invoice_status", new[] { "issued", "partially_paid", "paid", "overdue", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_invoice_status", new[] { "draft", "issued", "partially_paid", "paid", "overdue", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_renewal_request_status", new[] { "awaiting_tenant_decision", "tenant_declined", "awaiting_platform_review", "invoice_draft_created", "invoice_issued", "paid_awaiting_activation", "activated", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_status_enum", new[] { "trial", "active", "past_due", "cancelled", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "closed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "security", "role_scope_enum", new[] { "platform", "tenant" });
@@ -41,6 +42,8 @@ namespace EzCondo.BackEndServer.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "tenant_invoice_status", new[] { "draft", "pending_approval", "approved", "rejected", "published", "paid", "unpaid" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.HasSequence("subscription_invoice_no_seq", "platform");
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", b =>
                 {
@@ -995,12 +998,24 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid>("CreatedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_admin_id");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(3)")
                         .HasDefaultValue("VND")
                         .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by_admin_id");
 
                     b.Property<DateTimeOffset>("DueAt")
                         .HasColumnType("timestamptz")
@@ -1011,6 +1026,20 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)")
                         .HasColumnName("invoice_no");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTimeOffset?>("IssuedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("issued_at");
+
+                    b.Property<Guid?>("IssuedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("issued_by_admin_id");
 
                     b.Property<decimal>("PaidAmount")
                         .ValueGeneratedOnAdd()
@@ -1042,20 +1071,35 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("DeletedByAdminId");
+
+                    b.HasIndex("IssuedByAdminId");
+
                     b.HasIndex("TenantId", "InvoiceNo")
                         .IsUnique();
-
-                    b.HasIndex("TenantId", "SubscriptionId");
 
                     b.HasIndex("TenantId", "Status", "DueAt")
                         .HasDatabaseName("ix_subscription_invoices_due")
                         .HasFilter("status IN ('issued', 'partially_paid', 'overdue')");
+
+                    b.HasIndex("TenantId", "SubscriptionId", "BillingPeriodFrom", "BillingPeriodTo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subscription_invoices_active_period")
+                        .HasFilter("is_deleted = false AND billing_period_from IS NOT NULL AND billing_period_to IS NOT NULL");
 
                     b.ToTable("subscription_invoices", "platform", t =>
                         {
                             t.HasCheckConstraint("ck_subscription_invoices_amount", "(total_amount > 0 AND paid_amount >= 0 AND paid_amount <= total_amount)");
 
                             t.HasCheckConstraint("ck_subscription_invoices_billing_period", "(billing_period_from IS NULL AND billing_period_to IS NULL) OR (billing_period_from IS NOT NULL AND billing_period_to IS NOT NULL AND billing_period_to > billing_period_from)");
+
+                            t.HasCheckConstraint("ck_subscription_invoices_draft_unpaid", "status <> 'draft' OR paid_amount = 0");
+
+                            t.HasCheckConstraint("ck_subscription_invoices_issue_audit", "(\r\n	status = 'draft'\r\n	AND issued_at IS NULL\r\n	AND issued_by_admin_id IS NULL\r\n)\r\nOR\r\n(\r\n	status <> 'draft'\r\n	AND issued_at IS NOT NULL\r\n	AND issued_by_admin_id IS NOT NULL\r\n)");
+
+                            t.HasCheckConstraint("ck_subscription_invoices_soft_delete", "(\r\n	is_deleted = false\r\n	AND deleted_at IS NULL\r\n	AND deleted_by_admin_id IS NULL\r\n)\r\nOR\r\n(\r\n	is_deleted = true\r\n	AND deleted_at IS NOT NULL\r\n	AND deleted_by_admin_id IS NOT NULL\r\n)");
                         });
                 });
 
@@ -1199,6 +1243,134 @@ namespace EzCondo.BackEndServer.Migrations
                             t.HasCheckConstraint("CK_subscription_plans_price", "price >= 0");
 
                             t.HasCheckConstraint("ck_subscription_plans_billing_cycle", "billing_cycle_months IN (6, 12, 24)");
+                        });
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionRenewalRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("activated_at");
+
+                    b.Property<short?>("BillingCycleMonthsSnapshot")
+                        .HasColumnType("smallint")
+                        .HasColumnName("billing_cycle_months_snapshot");
+
+                    b.Property<DateOnly?>("BillingPeriodFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("billing_period_from");
+
+                    b.Property<DateOnly?>("BillingPeriodTo")
+                        .HasColumnType("date")
+                        .HasColumnName("billing_period_to");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CurrencySnapshot")
+                        .HasColumnType("char(3)")
+                        .HasColumnName("currency_snapshot");
+
+                    b.Property<DateOnly>("CurrentEndsAtSnapshot")
+                        .HasColumnType("date")
+                        .HasColumnName("current_ends_at_snapshot");
+
+                    b.Property<string>("PlanNameSnapshot")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("plan_name_snapshot");
+
+                    b.Property<DateTimeOffset?>("PlatformReviewedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("platform_reviewed_at");
+
+                    b.Property<Guid?>("PlatformReviewedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("platform_reviewed_by_admin_id");
+
+                    b.Property<decimal?>("PriceSnapshot")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price_snapshot");
+
+                    b.Property<Guid?>("SelectedPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("selected_plan_id");
+
+                    b.Property<SubscriptionRenewalRequestStatus>("Status")
+                        .HasColumnType("platform.subscription_renewal_request_status")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subscription_id");
+
+                    b.Property<Guid?>("SubscriptionInvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subscription_invoice_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("TenantRespondedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("tenant_responded_at");
+
+                    b.Property<Guid?>("TenantRespondedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_responded_by_user_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlatformReviewedByAdminId");
+
+                    b.HasIndex("SelectedPlanId");
+
+                    b.HasIndex("SubscriptionInvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subscription_renewal_requests_invoice")
+                        .HasFilter("subscription_invoice_id IS NOT NULL");
+
+                    b.HasIndex("TenantRespondedByUserId");
+
+                    b.HasIndex("Status", "BillingPeriodFrom")
+                        .HasDatabaseName("ix_subscription_renewal_requests_activation");
+
+                    b.HasIndex("TenantId", "Status", "CurrentEndsAtSnapshot")
+                        .HasDatabaseName("ix_subscription_renewal_requests_tenant_status");
+
+                    b.HasIndex("TenantId", "SubscriptionId", "CurrentEndsAtSnapshot")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subscription_renewal_requests_period");
+
+                    b.ToTable("subscription_renewal_requests", "platform", t =>
+                        {
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_activation", "(\n	status = 'activated'\n	AND activated_at IS NOT NULL\n)\nOR\n(\n	status <> 'activated'\n	AND activated_at IS NULL\n)");
+
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_invoice", "status = 'expired'\nOR\n(\n	status IN (\n		'awaiting_tenant_decision',\n		'tenant_declined',\n		'awaiting_platform_review'\n	)\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status IN (\n		'invoice_draft_created',\n		'invoice_issued',\n		'paid_awaiting_activation',\n		'activated'\n	)\n	AND subscription_invoice_id IS NOT NULL\n)");
+
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_platform_review", "(\n	platform_reviewed_by_admin_id IS NULL\n	AND platform_reviewed_at IS NULL\n)\nOR\n(\n	platform_reviewed_by_admin_id IS NOT NULL\n	AND platform_reviewed_at IS NOT NULL\n)");
+
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_selection", "(\n	selected_plan_id IS NULL\n	AND plan_name_snapshot IS NULL\n	AND billing_cycle_months_snapshot IS NULL\n	AND price_snapshot IS NULL\n	AND currency_snapshot IS NULL\n	AND billing_period_from IS NULL\n	AND billing_period_to IS NULL\n)\nOR\n(\n	selected_plan_id IS NOT NULL\n	AND plan_name_snapshot IS NOT NULL\n	AND billing_cycle_months_snapshot IN (6, 12, 24)\n	AND price_snapshot > 0\n	AND currency_snapshot IS NOT NULL\n	AND billing_period_from IS NOT NULL\n	AND billing_period_to IS NOT NULL\n	AND billing_period_from = current_ends_at_snapshot\n	AND billing_period_to = (\n		billing_period_from\n		+ make_interval(\n			months => billing_cycle_months_snapshot\n		)\n	)::date\n)");
+
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_status_payload", "(\n	status = 'awaiting_tenant_decision'\n	AND tenant_responded_by_user_id IS NULL\n	AND selected_plan_id IS NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status = 'tenant_declined'\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status = 'awaiting_platform_review'\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NOT NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status IN (\n		'invoice_draft_created',\n		'invoice_issued',\n		'paid_awaiting_activation',\n		'activated'\n	)\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NOT NULL\n	AND platform_reviewed_by_admin_id IS NOT NULL\n	AND subscription_invoice_id IS NOT NULL\n)\nOR status = 'expired'");
+
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_tenant_response", "(\n	tenant_responded_by_user_id IS NULL\n	AND tenant_responded_at IS NULL\n)\nOR\n(\n	tenant_responded_by_user_id IS NOT NULL\n	AND tenant_responded_at IS NOT NULL\n)");
                         });
                 });
 
@@ -2851,6 +3023,22 @@ namespace EzCondo.BackEndServer.Migrations
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", b =>
                 {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
+                        .WithMany()
+                        .HasForeignKey("IssuedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
                         .WithMany("SubscriptionInvoices")
                         .HasForeignKey("TenantId")
@@ -2928,6 +3116,54 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Navigation("AdminDeleted");
 
                     b.Navigation("AdminUpdated");
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionRenewalRequest", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "PlatformReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("PlatformReviewedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionPlan", "SelectedPlan")
+                        .WithMany()
+                        .HasForeignKey("SelectedPlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionInvoice", "SubscriptionInvoice")
+                        .WithOne()
+                        .HasForeignKey("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.SubscriptionRenewalRequest", "SubscriptionInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", "Tenant")
+                        .WithMany("SubscriptionRenewalRequests")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", "TenantRespondedByUser")
+                        .WithMany()
+                        .HasForeignKey("TenantRespondedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", "Subscription")
+                        .WithMany("RenewalRequests")
+                        .HasForeignKey("TenantId", "SubscriptionId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PlatformReviewedByAdmin");
+
+                    b.Navigation("SelectedPlan");
+
+                    b.Navigation("Subscription");
+
+                    b.Navigation("SubscriptionInvoice");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("TenantRespondedByUser");
                 });
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Tenant", b =>
@@ -3633,6 +3869,8 @@ namespace EzCondo.BackEndServer.Migrations
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaPlatform.Subscription", b =>
                 {
+                    b.Navigation("RenewalRequests");
+
                     b.Navigation("SubscriptionInvoices");
                 });
 
@@ -3686,6 +3924,8 @@ namespace EzCondo.BackEndServer.Migrations
                     b.Navigation("Services");
 
                     b.Navigation("SubscriptionInvoices");
+
+                    b.Navigation("SubscriptionRenewalRequests");
 
                     b.Navigation("Subscriptions");
 

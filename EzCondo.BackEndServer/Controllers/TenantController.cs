@@ -52,7 +52,7 @@ namespace EzCondo.BackEndServer.Controllers
 						"Gói dịch vụ đã ngừng cung cấp.")),
 
 				CreateTenantFailure.TaxCodeAlreadyExists =>
-					NotFound(CreateProblem(
+					Conflict(CreateProblem(
 						StatusCodes.Status409Conflict,
 						"tenant_tax_code_exists",
 						"Mã số thuế đã được một tenant khác sử dụng.")),

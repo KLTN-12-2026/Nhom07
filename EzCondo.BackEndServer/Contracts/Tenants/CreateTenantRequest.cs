@@ -23,7 +23,6 @@ namespace EzCondo.BackEndServer.Contracts.Tenants
 			ErrorMessage ="Địa chỉ chung cư phải có ít nhất 5 ký tự.")]
 		public string Address { get; set; } = string.Empty;
 		public Guid SubscriptionPlanId { get; set; }
-		public DateTimeOffset? TrialEndsAt { get; set; }
 
 		public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
 		{
