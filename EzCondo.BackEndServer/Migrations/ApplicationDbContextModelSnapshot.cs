@@ -43,6 +43,8 @@ namespace EzCondo.BackEndServer.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("payment_order_code_seq", "payment");
+
             modelBuilder.HasSequence("subscription_invoice_no_seq", "platform");
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", b =>
@@ -1143,6 +1145,11 @@ namespace EzCondo.BackEndServer.Migrations
                         .IsUnique();
 
                     b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("SubscriptionInvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subscription_payment_attempts_open_invoice")
+                        .HasFilter("status IN ('pending', 'partially_paid')");
 
                     b.HasIndex("GatewayAccountId", "GatewayPaymentRequestId");
 

@@ -1,28 +1,33 @@
 using EzCondo.BackEndServer.Data;
-using EzCondo.BackEndServer.Data.Enums;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using EzCondo.BackEndServer.Services.SubscriptionPlans;
-using EzCondo.BackEndServer.Infrastructure.Authentication.Options;
-using EzCondo.BackEndServer.Infrastructure;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
+using EzCondo.BackEndServer.Data.Enums;
+using EzCondo.BackEndServer.Infrastructure;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using EzCondo.BackEndServer.Infrastructure.Authentication.Options;
+using EzCondo.BackEndServer.Infrastructure.Email;
+using EzCondo.BackEndServer.Infrastructure.Email.Options;
+using EzCondo.BackEndServer.Infrastructure.Invitations;
+using EzCondo.BackEndServer.Infrastructure.Invitations.Options;
+using EzCondo.BackEndServer.Infrastructure.Payments.PayOS.Options;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions.Options;
+using EzCondo.BackEndServer.Services.Authentication;
+using EzCondo.BackEndServer.Services.Invitations;
+using EzCondo.BackEndServer.Services.SubscriptionInvoices;
+using EzCondo.BackEndServer.Services.SubscriptionPlans;
+using EzCondo.BackEndServer.Services.SubscriptionRenewals;
+using EzCondo.BackEndServer.Services.TenantAdminInvitations;
 using EzCondo.BackEndServer.Services.Tenants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using EzCondo.BackEndServer.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Identity;
-using EzCondo.BackEndServer.Services.Authentication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using EzCondo.BackEndServer.Infrastructure.Invitations;
-using EzCondo.BackEndServer.Services.TenantAdminInvitations;
-using EzCondo.BackEndServer.Infrastructure.Email.Options;
-using EzCondo.BackEndServer.Infrastructure.Email;
-using EzCondo.BackEndServer.Infrastructure.Invitations.Options;
-using EzCondo.BackEndServer.Services.Invitations;
-using EzCondo.BackEndServer.Infrastructure.Subscriptions.Options;
-using EzCondo.BackEndServer.Services.SubscriptionRenewals;
-using EzCondo.BackEndServer.Infrastructure.Subscriptions;
-using EzCondo.BackEndServer.Services.SubscriptionInvoices;
+using Npgsql;
+using Microsoft.Extensions.Options;
+using PayOS;
+using EzCondo.BackEndServer.Infrastructure.Payments.PayOS;
+using EzCondo.BackEndServer.Services.Payments.PayOS;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,10 +91,108 @@ builder.Services
 		"PaidReminderMonths phải từ 1 đến 3 tháng.")
 	.ValidateOnStart();
 
+// Đăng ký cấu hình tích hợp PayOS
+builder.Services
+	.AddOptions<PayOSIntegrationOptions>()
+	.Bind(
+		builder.Configuration.GetSection(
+			PayOSIntegrationOptions.SectionName))
+	.Validate(
+		x =>
+			!string.IsNullOrWhiteSpace(x.ProviderAccountCode) &&
+			x.ProviderAccountCode.Trim().Length <= 80,
+		"PayOS:ProviderAccountCode phải có từ 1 đến 80 ký tự.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.ClientId),
+		"PayOS:ClientId không được để trống.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.ApiKey),
+		"PayOS:ApiKey không được để trống.")
+	.Validate(
+		x => !string.IsNullOrWhiteSpace(x.ChecksumKey),
+		"PayOS:ChecksumKey không được để trống.")
+	.Validate(
+		x =>
+			Uri.TryCreate(
+				x.ReturnUrl,
+				UriKind.Absolute,
+				out var returnUri) &&
+			(
+				returnUri.Scheme == Uri.UriSchemeHttp ||
+				returnUri.Scheme == Uri.UriSchemeHttps
+			),
+		"PayOS:ReturnUrl phải là URL HTTP/HTTPS tuyệt đối.")
+	.Validate(
+		x =>
+			Uri.TryCreate(
+				x.CancelUrl,
+				UriKind.Absolute,
+				out var cancelUri) &&
+			(
+				cancelUri.Scheme == Uri.UriSchemeHttp ||
+				cancelUri.Scheme == Uri.UriSchemeHttps
+			),
+		"PayOS:CancelUrl phải là URL HTTP/HTTPS tuyệt đối.")
+	.Validate(
+		x => x.PaymentLinkMinutes is >= 5 and <= 60,
+		"PayOS:PaymentLinkMinutes phải từ 5 đến 60 phút.")
+	.Validate(
+		x => x.TimeoutSeconds is >= 5 and <= 60,
+		"PayOS:TimeoutSeconds phải từ 5 đến 60 giây.")
+	.Validate(
+		x => x.MaxRetries is >= 0 and <= 3,
+		"PayOS:MaxRetries phải từ 0 đến 3.")
+	.ValidateOnStart();
+
+
+// Đăng ký PayOS SDK client
+builder.Services.AddSingleton<PayOSClient>(
+	serviceProvider =>
+	{
+		var integrationOptions = serviceProvider
+			.GetRequiredService<
+				IOptions<PayOSIntegrationOptions>>()
+			.Value;
+
+		var sdkOptions =
+			new global::PayOS.PayOSOptions
+			{
+				ClientId =
+					integrationOptions.ClientId,
+
+				ApiKey =
+					integrationOptions.ApiKey,
+
+				ChecksumKey =
+					integrationOptions.ChecksumKey,
+
+				TimeoutMs = checked(
+					integrationOptions.TimeoutSeconds * 1000),
+
+				MaxRetries =
+					integrationOptions.MaxRetries,
+
+				LogLevel =
+					LogLevel.Warning
+			};
+
+		return new PayOSClient(sdkOptions);
+	});
+
+//Đăng ký PayOS gateway
+builder.Services.AddSingleton<
+	IPayOSGateway,
+	PayOSGateway>();
+
 //Đăng ký Invitation service
 builder.Services.AddSingleton<
 	IInvitationTokenService,
 	InvitationTokenService>();
+
+//Đăng ký service webhook
+builder.Services.AddScoped<
+	IPayOSWebhookProcessingService,
+	PayOSWebhookProcessingService>();
 
 //Đăng ký JwtTokenService
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
@@ -176,6 +279,11 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
 	ITenantSubscriptionInvoiceService,
 	TenantSubscriptionInvoiceService>();
+
+// Đăng ký service tạo hoặc tái sử dụng PayOS payment link
+builder.Services.AddScoped<
+	ITenantSubscriptionPaymentLinkService,
+	TenantSubscriptionPaymentLinkService>();
 
 //Đăng ký handler
 builder.Services.AddScoped<JwtBearerEventsHandler>();
@@ -304,6 +412,9 @@ var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 option.UseNpgsql(dataSource));
 
+builder.Services.AddScoped<
+	PlatformPayOSProviderAccountSeeder>();
+
 builder.Services.AddScoped<DbInitializer>();
 
 builder.Services.AddScoped<
@@ -378,8 +489,18 @@ var app = builder.Build();
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
-	var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
-	await initializer.InitializeAsync();
+	var initializer =
+		scope.ServiceProvider.GetRequiredService<DbInitializer>();
+
+	await initializer.InitializeAsync(
+		CancellationToken.None);
+
+	var payOSProviderAccountSeeder =
+		scope.ServiceProvider.GetRequiredService<
+			PlatformPayOSProviderAccountSeeder>();
+
+	await payOSProviderAccountSeeder.SeedAsync(
+		CancellationToken.None);
 }
 
 //Gọi seeder
