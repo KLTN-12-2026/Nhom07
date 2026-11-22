@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Security.Claims;
 using EzCondo.BackEndServer.Infrastructure.Authentication;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions;
 
 namespace EzCondo.BackEndServer.Services.Tenants
 {
@@ -14,7 +15,8 @@ namespace EzCondo.BackEndServer.Services.Tenants
 		DbInitializer dbInitializer,
 		ITenantIdentityGenerator identityGenerator,
 		TimeProvider timeProvider,
-		IHttpContextAccessor httpContextAccessor)
+		IHttpContextAccessor httpContextAccessor,
+		ITenantBackgroundJobCoordinator jobCoordinator)
 		: ITenantService
 	{
 		private const int TrialDurationDays = 30;
@@ -291,7 +293,8 @@ namespace EzCondo.BackEndServer.Services.Tenants
 			CancellationToken cancellationToken = default)
 		{
 			var now = timeProvider.GetUtcNow();
-			var today = DateOnly.FromDateTime(now.UtcDateTime);
+			var businessNow = now.ToOffset(TimeSpan.FromHours(7));
+			var today = DateOnly.FromDateTime(businessNow.DateTime);
 
 			await using var transaction = await dbcontext.Database
 				.BeginTransactionAsync(cancellationToken);
@@ -311,10 +314,15 @@ namespace EzCondo.BackEndServer.Services.Tenants
 				return RestoreTenantResult.Failed(RestoreTenantFailure.TenantNotFound);
 			}
 
-			if(tenant.Status != TenantStatusEnum.Suspended)
+			var tenantWasExpired = tenant.Status == TenantStatusEnum.Expired;
+			var expiredAt = tenant.ExpiredAt;
+
+			if(tenant.Status is not (
+				TenantStatusEnum.Suspended or
+				TenantStatusEnum.Expired))
 			{
 				return RestoreTenantResult.Failed(
-					RestoreTenantFailure.TenantNotSuspended);
+					RestoreTenantFailure.TenantNotRestorable);
 			}
 
 			var subscription = await dbcontext.Subscriptions
@@ -323,7 +331,9 @@ namespace EzCondo.BackEndServer.Services.Tenants
 				x => x.TenantId == tenantId && (
 					x.Status == SubscriptionStatusEnum.Trial ||
 					x.Status == SubscriptionStatusEnum.Active ||
-					x.Status == SubscriptionStatusEnum.PastDue),
+					x.Status == SubscriptionStatusEnum.PastDue) &&
+				x.StartsAt <= today &&
+				x.EndsAt > today,
 				cancellationToken);
 				
 			if(subscription is null)
@@ -337,11 +347,11 @@ namespace EzCondo.BackEndServer.Services.Tenants
 				subscription.Status == SubscriptionStatusEnum.Trial &&
 				tenant.TrialEndsAt.HasValue &&
 				tenant.TrialEndsAt.Value > now &&
-				subscription.EndsAt >= today;
+				subscription.EndsAt > today;
 
 			var activeSubscriptionIsValid =
 				subscription.Status == SubscriptionStatusEnum.Active &&
-				subscription.EndsAt >= today;
+				subscription.EndsAt > today;
 
 			if (trialValid)
 			{
@@ -364,15 +374,124 @@ namespace EzCondo.BackEndServer.Services.Tenants
 			tenant.SuspensionRequestedByAdminId= null;
 			tenant.SuspensionNoticeSentAt= null;
 			tenant.SuspendedAt = null; 
+			tenant.ExpiredAt = null;
+			tenant.ExpirationReasonCode = null;
+
+			if (tenantWasExpired && expiredAt.HasValue)
+			{
+				await RestoreTenantDataAsync(
+					tenantId,
+					expiredAt.Value,
+					now,
+					cancellationToken);
+			}
 
 			await dbcontext.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
+
+			jobCoordinator.Resume(tenantId);
 
 			return RestoreTenantResult.Success(
 				new TenantRestoreResponse(
 					tenant.Id,
 					tenant.Status,
 					now));
+		}
+
+		private async Task RestoreTenantDataAsync(
+			Guid tenantId,
+			DateTimeOffset expiredAt,
+			DateTimeOffset restoredAt,
+			CancellationToken cancellationToken)
+		{
+			await dbcontext.Users
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Apartments
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Contracts
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Complaints
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Invitations
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null),
+					cancellationToken);
+
+			await dbcontext.Invoices
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Payrolls
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.Services
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.StaffTimeSheets
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
+
+			await dbcontext.SubscriptionInvoices
+				.Where(x => x.TenantId == tenantId && x.IsDeleted && x.DeletedAt == expiredAt)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(x => x.IsDeleted, false)
+						.SetProperty(x => x.DeletedAt, (DateTimeOffset?)null)
+						.SetProperty(x => x.UpdatedAt, (DateTimeOffset?)restoredAt),
+					cancellationToken);
 		}
 	}
 }

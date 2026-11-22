@@ -121,6 +121,110 @@ namespace EzCondo.BackEndServer.Services.SubscriptionRenewals
 			return GetCurrentSubscriptionRenewalResult.Success(response);
 		}
 
+		public async Task<DeclineSubscriptionRenewalResult> DeclineAsync(
+			Guid requestId,
+			CancellationToken cancellationToken = default)
+		{
+			if(!TryGetCurrentIdentity(
+				out var userId,
+				out var tenantId))
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.InvalidIdentity);
+			}
+
+			var isTenantAdmin = await IsTenantAdminAsync(
+				userId,
+				tenantId,
+				cancellationToken);
+
+			if (!isTenantAdmin)
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.TenantAdminRequired);
+			}
+
+			var renewal = await dbcontext.SubscriptionRenewalRequests
+				.AsNoTracking()
+				.Where(
+					x =>
+						x.Id == requestId &&
+						x.TenantId == tenantId)
+				.Select(
+					x => new
+					{
+						x.Id,
+						x.Status,
+						x.CurrentEndsAtSnapshot,
+						SubscriptionStatus = x.Subscription.Status,
+						SubscriptionEndsAt = x.Subscription.EndsAt
+					})
+				.SingleOrDefaultAsync(cancellationToken);
+
+			if(renewal is null)
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.RenewalRequestNotFound);
+			}
+
+			if(renewal.Status != SubscriptionRenewalRequestStatus.AwaitingTenantDecision)
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.RenewalRequestAlreadyResponded);
+			}
+
+			if(renewal.SubscriptionEndsAt != renewal.CurrentEndsAtSnapshot ||
+				renewal.SubscriptionStatus is not (
+					SubscriptionStatusEnum.Trial or
+					SubscriptionStatusEnum.Active))
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.RenewalRequestStale);
+			}
+
+			var now = timeProvider.GetUtcNow();
+
+			var affectedRows = await dbcontext.SubscriptionRenewalRequests
+				.Where(
+					x =>
+						x.Id == requestId &&
+						x.TenantId == tenantId &&
+						x.Status == SubscriptionRenewalRequestStatus.AwaitingTenantDecision &&
+						x.CurrentEndsAtSnapshot == renewal.CurrentEndsAtSnapshot)
+				.ExecuteUpdateAsync(
+					setters => setters
+						.SetProperty(
+							x => x.Status,
+							SubscriptionRenewalRequestStatus.TenantDeclined)
+						.SetProperty(
+							x => x.TenantRespondedByUserId,
+							(Guid?)userId)
+						.SetProperty(
+							x => x.TenantRespondedAt,
+							(DateTimeOffset?)now)
+						.SetProperty(
+							x => x.UpdatedAt,
+							(DateTimeOffset?)now),
+					cancellationToken);
+
+			if(affectedRows == 0)
+			{
+				return DeclineSubscriptionRenewalResult.Failed(
+					DeclineSubscriptionRenewalFailure.RenewalRequestAlreadyResponded);
+			}
+
+			var accessExpiresAt = SubscriptionLifecycleClock.ToExpiryInstant(
+				renewal.SubscriptionEndsAt);
+
+			return DeclineSubscriptionRenewalResult.Success(
+				new DeclineSubscriptionRenewalResponse(
+					requestId,
+					"tenant_declined",
+					renewal.SubscriptionEndsAt,
+					accessExpiresAt,
+					now));
+		}
+
 		public async Task<ConfirmSubscriptionRenewalResult> ConfirmAsync(
 			Guid requestId,
 			ConfirmSubscriptionRenewalRequest request,

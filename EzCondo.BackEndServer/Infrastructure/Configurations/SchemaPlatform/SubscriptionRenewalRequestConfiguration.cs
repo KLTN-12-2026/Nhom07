@@ -28,6 +28,15 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 			b.Property(x => x.PlanNameSnapshot)
 				.HasMaxLength(50);
 
+			b.Property(x => x.ExpiryNoticeLastAttemptAt)
+				.HasColumnType("timestamptz");
+
+			b.Property(x => x.ExpiryNoticeSentAt)
+				.HasColumnType("timestamptz");
+
+			b.Property(x => x.ExpiryNoticeLastError)
+				.HasMaxLength(1000);
+
 			b.Property(x => x.BillingCycleMonthsSnapshot)
 				.HasColumnType("smallint");
 

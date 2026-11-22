@@ -167,6 +167,12 @@ namespace EzCondo.BackEndServer.Controllers
 						"tenant_not_found",
 						"Không tìm thấy tenant.")),
 
+				RestoreTenantFailure.TenantNotRestorable =>
+					Conflict(CreateProblem(
+						StatusCodes.Status409Conflict,
+						"tenant_not_restorable",
+						"Tenant chỉ có thể khôi phục khi đang Suspended hoặc Expired.")),
+
 				RestoreTenantFailure.TenantNotSuspended =>
 					Conflict(CreateProblem(
 						StatusCodes.Status409Conflict,

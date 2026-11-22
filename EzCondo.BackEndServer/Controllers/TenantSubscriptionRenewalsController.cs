@@ -152,6 +152,74 @@ namespace EzCondo.BackEndServer.Controllers
 			};
 		}
 
+		[HttpPost("{requestId:guid}/decline")]
+		[ProducesResponseType<DeclineSubscriptionRenewalResponse>(StatusCodes.Status200OK)]
+		[ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+		[ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+		[ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+		public async Task<ActionResult<DeclineSubscriptionRenewalResponse>> Decline(
+			Guid requestId,
+			CancellationToken cancellationToken)
+		{
+			var result = await renewalService.DeclineAsync(
+				requestId,
+				cancellationToken);
+
+			if (result.IsSuccess)
+			{
+				return Ok(result.Value);
+			}
+
+			return result.Failure switch
+			{
+				DeclineSubscriptionRenewalFailure.InvalidIdentity =>
+					Unauthorized(new ProblemDetails
+					{
+						Status = 401,
+						Title = "invalid_tenant_identity",
+						Detail = "Không xác định được tài khoản hoặc tenant."
+					}),
+
+				DeclineSubscriptionRenewalFailure.TenantAdminRequired =>
+					StatusCode(403, new ProblemDetails
+					{
+						Status = 403,
+						Title = "tenant_admin_required",
+						Detail = "Chỉ Tenant Admin được từ chối gia hạn."
+					}),
+
+				DeclineSubscriptionRenewalFailure.RenewalRequestNotFound =>
+					NotFound(new ProblemDetails
+					{
+						Status = 404,
+						Title = "renewal_request_not_found",
+						Detail = "Không tìm thấy yêu cầu gia hạn."
+					}),
+
+				DeclineSubscriptionRenewalFailure.RenewalRequestAlreadyResponded =>
+					Conflict(new ProblemDetails
+					{
+						Status = 409,
+						Title = "renewal_request_already_responded",
+						Detail = "Yêu cầu gia hạn đã được phản hồi."
+					}),
+
+				DeclineSubscriptionRenewalFailure.RenewalRequestStale =>
+					Conflict(new ProblemDetails
+					{
+						Status = 409,
+						Title = "renewal_request_stale",
+						Detail = "Yêu cầu gia hạn không còn khớp subscription hiện tại."
+					}),
+
+				_ => Problem(
+					statusCode: 500,
+					title: "decline_subscription_renewal_failed",
+					detail: "Không thể từ chối gia hạn.")
+			};
+		}
+
 		private static ProblemDetails CreateProblem(
 			int status, 
 			string code, 

@@ -11,7 +11,6 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public DateOnly CurrentEndsAtSnapshot { get; set; }
 		public SubscriptionRenewalRequestStatus Status { get; set; }
 			= SubscriptionRenewalRequestStatus.AwaitingTenantDecision;
-
 		public Guid? SelectedPlanId { get; set; }
 		public string? PlanNameSnapshot { get; set; }
 		public int? BillingCycleMonthsSnapshot { get; set; }
@@ -19,14 +18,15 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public string? CurrencySnapshot { get; set; }
 		public DateOnly? BillingPeriodFrom { get; set; }
 		public DateOnly? BillingPeriodTo { get; set; }
-
+		public DateTimeOffset? ExpiryNoticeLastAttemptAt { get; set; }
+		public DateTimeOffset? ExpiryNoticeSentAt { get; set; }
+		public string? ExpiryNoticeLastError { get; set; }
 		public Guid? TenantRespondedByUserId { get; set; }
 		public DateTimeOffset? TenantRespondedAt { get; set; }
 		public Guid? PlatformReviewedByAdminId { get; set; }
 		public DateTimeOffset? PlatformReviewedAt { get; set; }
 		public Guid? SubscriptionInvoiceId { get; set; }
 		public DateTimeOffset? ActivatedAt { get; set; }
-
 		public DateTimeOffset CreatedAt { get; set; }
 		public DateTimeOffset? UpdatedAt { get; set; }
 

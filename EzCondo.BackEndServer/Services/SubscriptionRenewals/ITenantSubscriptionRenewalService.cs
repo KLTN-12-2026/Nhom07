@@ -11,5 +11,9 @@ namespace EzCondo.BackEndServer.Services.SubscriptionRenewals
 			Guid requestId,
 			ConfirmSubscriptionRenewalRequest request,
 			CancellationToken cancellationToken = default);
+
+		Task<DeclineSubscriptionRenewalResult> DeclineAsync(
+			Guid requestId,
+			CancellationToken cancellationToken = default);
 	}
 }
