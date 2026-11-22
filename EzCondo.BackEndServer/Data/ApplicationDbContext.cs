@@ -15,7 +15,11 @@ namespace EzCondo.BackEndServer.Data
 {
 	public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityUserContext<User, Guid>(options)
 	{
-		public DbSet<Contract> Contracts => Set<Contract>(); 
+		public DbSet<Contract> Contracts => Set<Contract>();
+		public DbSet<ProviderAccount> ProviderAccounts => Set<ProviderAccount>();
+		public DbSet<SubscriptionPaymentAllocation> SubscriptionPaymentAllocations => Set<SubscriptionPaymentAllocation>();
+		public DbSet<PaymentRequest> PaymentRequests => Set<PaymentRequest>();
+		public DbSet<SubscriptionPaymentAttempt> SubscriptionPaymentAttempts => Set<SubscriptionPaymentAttempt>();
 		public DbSet<Rule> Rules => Set<Rule>();
 		public DbSet<Complaint> Complaints => Set<Complaint>();
 		public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -73,6 +77,12 @@ namespace EzCondo.BackEndServer.Data
 					"platform")
 				.StartsAt(1)
 				.IncrementsBy(1);
+
+			b.HasSequence<long>(
+				"payment_order_code_seq",
+				"payment")
+			.StartsAt(1)
+			.IncrementsBy(1);
 
 			b.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 		}
