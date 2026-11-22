@@ -25,7 +25,9 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public Guid? SuspensionRequestedByAdminId { get; set; }
 		public DateTimeOffset? SuspensionNoticeSentAt { get; set; }
 		public DateTimeOffset? SuspendedAt { get; set; }
-		
+		public DateTimeOffset? ExpiredAt { get; set; }
+		public string? ExpirationReasonCode { get; set; }
+
 		public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 		public ICollection<Rule> Rules{ get; set; } = new List<Rule>();
 		public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();

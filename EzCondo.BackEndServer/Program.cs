@@ -28,6 +28,7 @@ using Microsoft.Extensions.Options;
 using PayOS;
 using EzCondo.BackEndServer.Infrastructure.Payments.PayOS;
 using EzCondo.BackEndServer.Services.Payments.PayOS;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -188,6 +189,68 @@ builder.Services.AddSingleton<
 builder.Services.AddSingleton<
 	IInvitationTokenService,
 	InvitationTokenService>();
+
+//đăng ký chức năng invitation hêt hạn
+builder.Services
+	.AddOptions<InvitationExpiryOptions>()
+	.Bind(
+		builder.Configuration.GetSection(
+			InvitationExpiryOptions.SectionName))
+	.Validate(
+		x => x.CheckIntervalMinutes is >= 1 and <= 1440,
+		"Invitations:Expiry:CheckIntervalMinutes không hợp lệ.")
+	.ValidateOnStart();
+
+builder.Services.AddScoped<
+	IInvitationExpiryProcessor,
+	InvitationExpiryProcessor>();
+
+var invitationExpiryEnabled = builder.Configuration.GetValue<bool>(
+	$"{InvitationExpiryOptions.SectionName}:Enabled");
+
+if (invitationExpiryEnabled)
+{
+	builder.Services.AddHostedService<
+		InvitationExpiryWorker>();
+}
+
+//Đăng ký luồng Tenant_admin từ Decline gia hạn Subscription
+builder.Services
+	.AddOptions<SubscriptionLifecycleOptions>()
+	.Bind(
+			builder.Configuration.GetSection(
+				SubscriptionLifecycleOptions.SectionName))
+	.Validate(
+			x => x.CheckIntervalMinutes is >= 5 and <= 1440,
+			"CheckIntervalMinutes không hợp lệ.")
+	.Validate(
+			x => x.ExpiryNoticeLeadHours is >= 1 and <= 72,
+			"ExpiryNoticeLeadHours  không hợp lệ.")
+	.Validate(
+			x => x.RetryAfterMinutes is >= 5 and <= 120,
+			"RetryAfterMinutes không hợp lệ.")
+	.ValidateOnStart();
+
+builder.Services.AddSingleton<
+	ITenantBackgroundJobCoordinator,
+	TenantBackgroundJobCoordinator>();
+
+builder.Services.AddSingleton<
+	ISubscriptionExpiryNoticeSender,
+	MailkitSubscriptionExpiryNoticeSender>();
+
+builder.Services.AddScoped<
+	ISubscriptionLifecycleProcessor,
+	SubscriptionLifecycleProcessor>();
+
+//Đăng ký worker
+var lifecycleEnabled = builder.Configuration.GetValue<bool>(
+	$"{SubscriptionLifecycleOptions.SectionName}:Enabled");
+
+if (lifecycleEnabled)
+{
+	builder.Services.AddHostedService<SubscriptionLifecycleWorker>();
+}
 
 //Đăng ký service webhook
 builder.Services.AddScoped<
@@ -358,6 +421,11 @@ builder.Services.AddAuthentication(x =>
 		};
 	});
 
+//Đăng ký service Auth chức năng Invitation
+builder.Services.AddScoped<
+	IAuthorizationHandler,
+	PermissionAuthorizationHandler>();
+
 builder.Services.AddAuthorization(x =>
 {
 	x.AddPolicy(
@@ -374,6 +442,21 @@ builder.Services.AddAuthorization(x =>
 		{
 			policy.RequireAuthenticatedUser();
 			policy.RequireClaim(AppClaimTypes.Scope, "tenant");
+		});
+
+	x.AddPolicy(
+		AuthPolicies.PlatformTenantInvitationCreate,
+		policy =>
+		{
+			policy.RequireAuthenticatedUser();
+
+			policy.RequireClaim(
+				AppClaimTypes.Scope,
+				"platform");
+
+			policy.AddRequirements(
+				new PermissionRequirement(
+					"platform.tenant_invitations.create"));
 		});
 });
 

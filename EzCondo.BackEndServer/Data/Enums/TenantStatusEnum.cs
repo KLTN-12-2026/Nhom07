@@ -10,6 +10,8 @@ namespace EzCondo.BackEndServer.Data.Enums
 		Active,
 		[PgName("suspended")]
 		Suspended,
+		[PgName("expired")]
+		Expired,
 		[PgName("closed")]
 		Closed
 	}

@@ -74,12 +74,16 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.HasIndex(x => new { x.TenantId, x.Email, x.TokenHash }).IsUnique();
 
-			b.HasIndex(x => new { x.TenantId, x.Email, x.RoleId })
-				.HasDatabaseName("ix_invitations_active")
-				.IsUnique()
-				.HasFilter(
-					"status IN ('pending_delivery', 'sent') " +
-					"AND is_deleted = false");
+			b.HasIndex(x => new
+			{
+				x.TenantId,
+				x.RoleId
+			})
+			.HasDatabaseName("ux_invitations_active_tenant_role")
+			.IsUnique()
+			.HasFilter(
+				"status IN ('pending_delivery', 'sent') " +
+				"AND is_deleted = false");
 
 			b.HasIndex(x => new { x.Status, x.ExpiresAt })
 				.HasDatabaseName("ix_invitations_expiring")

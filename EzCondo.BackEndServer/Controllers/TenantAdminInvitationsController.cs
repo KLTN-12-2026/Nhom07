@@ -1,4 +1,5 @@
 ﻿using EzCondo.BackEndServer.Contracts.TenantAdminInvitations;
+using EzCondo.BackEndServer.Data.Enums;
 using EzCondo.BackEndServer.Infrastructure.Authentication;
 using EzCondo.BackEndServer.Services.TenantAdminInvitations;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EzCondo.BackEndServer.Controllers
 {
 	[ApiController]
-	[Authorize(Policy = AuthPolicies.PlatformScope)]
+	[Authorize(Policy = AuthPolicies.PlatformTenantInvitationCreate)]
 	[Route("api/platform/tenants/{tenantId:guid}/tenant-admin-invitations")]
 	public sealed class TenantAdminInvitationsController(
 		ITenantAdminInvitationService invitationService)
@@ -21,6 +22,7 @@ namespace EzCondo.BackEndServer.Controllers
 		[ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
 		[ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
 		[ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+		[ProducesResponseType(StatusCodes.Status202Accepted)]
 		public async Task<ActionResult<TenantAdminInvitationResponse>> Create(
 			Guid tenantId,
 			[FromBody] CreateTenantAdminInvitationRequest request,
@@ -33,8 +35,12 @@ namespace EzCondo.BackEndServer.Controllers
 
 			if (result.IsSuccess)
 			{
+				var statusCode = result.Value!.Status == InvitationStatusEnum.Sent
+					? StatusCodes.Status201Created
+					: StatusCodes.Status202Accepted;
+
 				return StatusCode(
-					StatusCodes.Status201Created,
+					statusCode,
 					result.Value);
 			}
 

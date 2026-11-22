@@ -2,6 +2,7 @@
 using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
 using EzCondo.BackEndServer.Data.Enums;
 using EzCondo.BackEndServer.Infrastructure.Subscriptions.Options;
+using EzCondo.BackEndServer.Infrastructure.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -12,6 +13,7 @@ namespace EzCondo.BackEndServer.Services.SubscriptionRenewals
 		ApplicationDbContext dbcontext,
 		TimeProvider timeProvider,
 		IOptions<SubscriptionRenewalReminderOptions> optionsAccessor,
+		ITenantBackgroundJobCoordinator jobCoordinator,
 		ILogger<SubscriptionRenewalReminderProcessor> logger)
 		: ISubscriptionRenewalReminderProcessor
 	{
@@ -62,6 +64,17 @@ namespace EzCondo.BackEndServer.Services.SubscriptionRenewals
 
 			foreach(var subscription in potentialSubscriptions)
 			{
+				if(jobCoordinator.IsStopped(subscription.TenantId))
+				{
+					skippedStateCount++;
+
+					logger.LogInformation(
+						"Bỏ qua reminder của tenant {TenantCode} vì job tenant đã bị dừng.",
+						subscription.TenantCode);
+
+					continue;
+				}
+
 				var reminder = subscription.SubscriptionStatus switch
 				{
 					SubscriptionStatusEnum.Trial =>

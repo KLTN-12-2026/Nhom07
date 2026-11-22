@@ -32,7 +32,7 @@ namespace EzCondo.BackEndServer.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_renewal_request_status", new[] { "awaiting_tenant_decision", "tenant_declined", "awaiting_platform_review", "invoice_draft_created", "invoice_issued", "paid_awaiting_activation", "activated", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "subscription_status_enum", new[] { "trial", "active", "past_due", "cancelled", "expired" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "closed" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "platform", "tenant_status_enum", new[] { "trial", "active", "suspended", "expired", "closed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "security", "role_scope_enum", new[] { "platform", "tenant" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invitation_status_enum", new[] { "accepted", "sent", "revoked", "expired", "pending_delivery" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant", "invoice_payment_attempt_status", new[] { "pending", "partially_paid", "paid", "cancelled", "failed" });
@@ -1291,6 +1291,19 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("date")
                         .HasColumnName("current_ends_at_snapshot");
 
+                    b.Property<DateTimeOffset?>("ExpiryNoticeLastAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expiry_notice_last_attempt_at");
+
+                    b.Property<string>("ExpiryNoticeLastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("expiry_notice_last_error");
+
+                    b.Property<DateTimeOffset?>("ExpiryNoticeSentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expiry_notice_sent_at");
+
                     b.Property<string>("PlanNameSnapshot")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
@@ -1367,17 +1380,17 @@ namespace EzCondo.BackEndServer.Migrations
 
                     b.ToTable("subscription_renewal_requests", "platform", t =>
                         {
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_activation", "(\n	status = 'activated'\n	AND activated_at IS NOT NULL\n)\nOR\n(\n	status <> 'activated'\n	AND activated_at IS NULL\n)");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_activation", "(\r\n	status = 'activated'\r\n	AND activated_at IS NOT NULL\r\n)\r\nOR\r\n(\r\n	status <> 'activated'\r\n	AND activated_at IS NULL\r\n)");
 
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_invoice", "status = 'expired'\nOR\n(\n	status IN (\n		'awaiting_tenant_decision',\n		'tenant_declined',\n		'awaiting_platform_review'\n	)\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status IN (\n		'invoice_draft_created',\n		'invoice_issued',\n		'paid_awaiting_activation',\n		'activated'\n	)\n	AND subscription_invoice_id IS NOT NULL\n)");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_invoice", "status = 'expired'\r\nOR\r\n(\r\n	status IN (\r\n		'awaiting_tenant_decision',\r\n		'tenant_declined',\r\n		'awaiting_platform_review'\r\n	)\r\n	AND subscription_invoice_id IS NULL\r\n)\r\nOR\r\n(\r\n	status IN (\r\n		'invoice_draft_created',\r\n		'invoice_issued',\r\n		'paid_awaiting_activation',\r\n		'activated'\r\n	)\r\n	AND subscription_invoice_id IS NOT NULL\r\n)");
 
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_platform_review", "(\n	platform_reviewed_by_admin_id IS NULL\n	AND platform_reviewed_at IS NULL\n)\nOR\n(\n	platform_reviewed_by_admin_id IS NOT NULL\n	AND platform_reviewed_at IS NOT NULL\n)");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_platform_review", "(\r\n	platform_reviewed_by_admin_id IS NULL\r\n	AND platform_reviewed_at IS NULL\r\n)\r\nOR\r\n(\r\n	platform_reviewed_by_admin_id IS NOT NULL\r\n	AND platform_reviewed_at IS NOT NULL\r\n)");
 
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_selection", "(\n	selected_plan_id IS NULL\n	AND plan_name_snapshot IS NULL\n	AND billing_cycle_months_snapshot IS NULL\n	AND price_snapshot IS NULL\n	AND currency_snapshot IS NULL\n	AND billing_period_from IS NULL\n	AND billing_period_to IS NULL\n)\nOR\n(\n	selected_plan_id IS NOT NULL\n	AND plan_name_snapshot IS NOT NULL\n	AND billing_cycle_months_snapshot IN (6, 12, 24)\n	AND price_snapshot > 0\n	AND currency_snapshot IS NOT NULL\n	AND billing_period_from IS NOT NULL\n	AND billing_period_to IS NOT NULL\n	AND billing_period_from = current_ends_at_snapshot\n	AND billing_period_to = (\n		billing_period_from\n		+ make_interval(\n			months => billing_cycle_months_snapshot\n		)\n	)::date\n)");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_selection", "(\r\n	selected_plan_id IS NULL\r\n	AND plan_name_snapshot IS NULL\r\n	AND billing_cycle_months_snapshot IS NULL\r\n	AND price_snapshot IS NULL\r\n	AND currency_snapshot IS NULL\r\n	AND billing_period_from IS NULL\r\n	AND billing_period_to IS NULL\r\n)\r\nOR\r\n(\r\n	selected_plan_id IS NOT NULL\r\n	AND plan_name_snapshot IS NOT NULL\r\n	AND billing_cycle_months_snapshot IN (6, 12, 24)\r\n	AND price_snapshot > 0\r\n	AND currency_snapshot IS NOT NULL\r\n	AND billing_period_from IS NOT NULL\r\n	AND billing_period_to IS NOT NULL\r\n	AND billing_period_from = current_ends_at_snapshot\r\n	AND billing_period_to = (\r\n		billing_period_from\r\n		+ make_interval(\r\n			months => billing_cycle_months_snapshot\r\n		)\r\n	)::date\r\n)");
 
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_status_payload", "(\n	status = 'awaiting_tenant_decision'\n	AND tenant_responded_by_user_id IS NULL\n	AND selected_plan_id IS NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status = 'tenant_declined'\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status = 'awaiting_platform_review'\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NOT NULL\n	AND platform_reviewed_by_admin_id IS NULL\n	AND subscription_invoice_id IS NULL\n)\nOR\n(\n	status IN (\n		'invoice_draft_created',\n		'invoice_issued',\n		'paid_awaiting_activation',\n		'activated'\n	)\n	AND tenant_responded_by_user_id IS NOT NULL\n	AND selected_plan_id IS NOT NULL\n	AND platform_reviewed_by_admin_id IS NOT NULL\n	AND subscription_invoice_id IS NOT NULL\n)\nOR status = 'expired'");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_status_payload", "(\r\n	status = 'awaiting_tenant_decision'\r\n	AND tenant_responded_by_user_id IS NULL\r\n	AND selected_plan_id IS NULL\r\n	AND platform_reviewed_by_admin_id IS NULL\r\n	AND subscription_invoice_id IS NULL\r\n)\r\nOR\r\n(\r\n	status = 'tenant_declined'\r\n	AND tenant_responded_by_user_id IS NOT NULL\r\n	AND selected_plan_id IS NULL\r\n	AND platform_reviewed_by_admin_id IS NULL\r\n	AND subscription_invoice_id IS NULL\r\n)\r\nOR\r\n(\r\n	status = 'awaiting_platform_review'\r\n	AND tenant_responded_by_user_id IS NOT NULL\r\n	AND selected_plan_id IS NOT NULL\r\n	AND platform_reviewed_by_admin_id IS NULL\r\n	AND subscription_invoice_id IS NULL\r\n)\r\nOR\r\n(\r\n	status IN (\r\n		'invoice_draft_created',\r\n		'invoice_issued',\r\n		'paid_awaiting_activation',\r\n		'activated'\r\n	)\r\n	AND tenant_responded_by_user_id IS NOT NULL\r\n	AND selected_plan_id IS NOT NULL\r\n	AND platform_reviewed_by_admin_id IS NOT NULL\r\n	AND subscription_invoice_id IS NOT NULL\r\n)\r\nOR status = 'expired'");
 
-                            t.HasCheckConstraint("ck_subscription_renewal_requests_tenant_response", "(\n	tenant_responded_by_user_id IS NULL\n	AND tenant_responded_at IS NULL\n)\nOR\n(\n	tenant_responded_by_user_id IS NOT NULL\n	AND tenant_responded_at IS NOT NULL\n)");
+                            t.HasCheckConstraint("ck_subscription_renewal_requests_tenant_response", "(\r\n	tenant_responded_by_user_id IS NULL\r\n	AND tenant_responded_at IS NULL\r\n)\r\nOR\r\n(\r\n	tenant_responded_by_user_id IS NOT NULL\r\n	AND tenant_responded_at IS NOT NULL\r\n)");
                         });
                 });
 
@@ -1405,6 +1418,15 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<string>("ExpirationReasonCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("expiration_reason_code");
+
+                    b.Property<DateTimeOffset?>("ExpiredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expired_at");
 
                     b.Property<string>("LegalName")
                         .IsRequired()
@@ -1977,9 +1999,9 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDatabaseName("ix_invitations_expiring")
                         .HasFilter("status IN ('pending_delivery', 'sent')");
 
-                    b.HasIndex("TenantId", "Email", "RoleId")
+                    b.HasIndex("TenantId", "RoleId")
                         .IsUnique()
-                        .HasDatabaseName("ix_invitations_active")
+                        .HasDatabaseName("ux_invitations_active_tenant_role")
                         .HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false");
 
                     b.HasIndex("TenantId", "Email", "TokenHash")

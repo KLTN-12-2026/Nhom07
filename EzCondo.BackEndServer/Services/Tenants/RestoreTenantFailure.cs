@@ -4,6 +4,7 @@
 	{
 		None,
 		TenantNotFound,
+		TenantNotRestorable,
 		TenantNotSuspended,
 		NoValidSubscription
 	}
