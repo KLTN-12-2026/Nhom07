@@ -8,8 +8,15 @@ using EzCondo.BackEndServer.Infrastructure;
 using System.Text;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
 using EzCondo.BackEndServer.Services.Tenants;
+using EzCondo.BackEndServer.Mobile;
 
 var builder = WebApplication.CreateBuilder(args);
+if (Environment.GetEnvironmentVariable("EZCONDO_MOBILE_LOCAL") == "1")
+{
+	var local = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "../mobile/.local"));
+	builder.Configuration.AddJsonFile(Path.Combine(local, "shared-backend.json"), optional: false);
+	await MobileLocalDatabase.StartAsync(local);
+}
 
 // Add services to the container.
 
@@ -125,6 +132,7 @@ builder.Services.AddScoped<
 
 
 builder.Services.AddControllers();
+builder.Services.AddMobileApi(builder.Configuration);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -138,9 +146,12 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 //Gọi seeder
-await DataBaseSeeder.SeedPlatformAccountsAsync(
-	app.Services,
-	CancellationToken.None);
+if (Environment.GetEnvironmentVariable("EZCONDO_MOBILE_LOCAL") != "1")
+{
+	await DataBaseSeeder.SeedPlatformAccountsAsync(
+		app.Services,
+		CancellationToken.None);
+}
 
 
 
@@ -156,6 +167,7 @@ app.UseHttpsRedirection();
 app.UseCors(ReactCorsPolicy);
 
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

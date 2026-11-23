@@ -5,15 +5,22 @@ public sealed class MainTabs : TabbedPage
     public MainTabs()
     {
         BarBackgroundColor = Colors.White;
-        SelectedTabColor = Ui.Teal;
+        SelectedTabColor = Ui.Primary;
         UnselectedTabColor = Ui.Muted;
         Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific.TabbedPage.SetToolbarPlacement(
             this, Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific.ToolbarPlacement.Bottom);
-        Add(new HomePage(), "Trang chủ", "tab_home.png");
-        if (App.Api.IsResident) Add(new InvoicesPage(), "Hóa đơn", "tab_invoice.png");
-        Add(new ComplaintsPage(), App.Api.IsResident ? "Phản ánh" : "Công việc", "tab_chat.png");
-        if (!App.Api.IsResident) Add(new ShiftsPage(), "Lịch trực", "tab_calendar.png");
-        Add(new ProfilePage(), "Cá nhân", "tab_profile.png");
+        Add(new HomePage(), "Trang chủ", "\ue88a");
+        if (App.Api.IsResident) Add(new InvoicesPage(), "Hóa đơn", "\uef6e");
+        Add(new ComplaintsPage(), App.Api.IsResident ? "Phản ánh" : "Công việc", "\uf083");
+        if (App.Api.IsResident) Add(new ServicesHubPage(), "Tiện ích", "\uea40");
+        else
+        {
+            Add(new ShiftsPage(), "Bảng công", "\uebcc");
+            Add(new ProfilePage(), "Cá nhân", "\ue7ff");
+        }
     }
-    private void Add(Page page, string title, string icon) => Children.Add(new NavigationPage(page) { Title = title, IconImageSource = icon });
+    private void Add(Page page, string title, string glyph) => Children.Add(new NavigationPage(page)
+    {
+        Title = title, IconImageSource = new FontImageSource { FontFamily = "MaterialIcons", Glyph = glyph, Size = 25, Color = Ui.Primary }
+    });
 }

@@ -2,19 +2,45 @@ using EzCondo.Mobile.Contracts;
 
 namespace EzCondo.Mobile.Pages;
 
-public sealed class InvoicesPage() : DataPage("Hóa đơn")
+public sealed class InvoicesPage() : DataPage("Hóa đơn", residentHeader: true)
 {
+    private List<InvoiceDto> invoices = [];
+    private string? selectedId;
     protected override async Task Load()
     {
-        var invoices = await App.Api.Get<List<InvoiceDto>>("invoices");
+        invoices = await App.Api.Get<List<InvoiceDto>>("invoices");
+        Render();
+    }
+    private void Render()
+    {
         Body.Clear();
-        Body.Add(Ui.Section("Chi phí căn hộ"));
-        Body.Add(Ui.Text("Tra cứu phí và lịch sử hóa đơn của bạn.", color: Ui.Muted));
-        if (invoices.Count == 0) Empty("Bạn chưa có hóa đơn.");
-        foreach (var invoice in invoices)
-            Body.Add(Ui.Card(Ui.Status(invoice.Status), Ui.Text($"Tháng {invoice.Month}", 20, bold: true),
-                Ui.Text(Ui.Money(invoice.Total), 26, Ui.Teal, true), Ui.Text($"Hạn thanh toán {invoice.DueDate}", 13, Ui.Muted),
-                Ui.Action("Chi tiết " + invoice.Code, () => Open(new InvoicePage(invoice)), true)));
+        Body.Add(Ui.Stack(Ui.Text("HÓA ĐƠN & DỊCH VỤ", 11, Ui.Muted),
+            Ui.Text("Căn hộ " + App.Api.Account!.ApartmentCode, 24, bold: true)));
+        if (invoices.Count == 0) { Empty("Bạn chưa có hóa đơn."); return; }
+        var invoice = invoices.FirstOrDefault(i => i.Id == selectedId) ?? invoices[0];
+        selectedId = invoice.Id;
+        Body.Add(Ui.BillHero(invoice, "Sao chép mã hóa đơn", async () =>
+        {
+            await Clipboard.Default.SetTextAsync(invoice.Code);
+            await DisplayAlert("Đã sao chép", invoice.Code, "Đóng");
+        }));
+        Body.Add(Ui.Heading("Kỳ thanh toán", invoices.Count + " kỳ"));
+        Body.Add(Ui.Filters(invoices.Select(i => Ui.Chip("Tháng " + i.Month, i.Id == selectedId, () =>
+        {
+            selectedId = i.Id;
+            Render();
+            return Task.CompletedTask;
+        }))));
+        Body.Add(Ui.Heading("Bảng kê chi tiết chi phí", invoice.Items.Count + " khoản mục"));
+        foreach (var item in invoice.Items) Body.Add(InvoicePage.Line(item, invoice.Status));
+        Body.Add(Ui.Card(Ui.Leading(Ui.IconBadge("\ue873"), Ui.Section("Thông tin hóa đơn")),
+            Ui.Row(Ui.Text("Mã hóa đơn", 13, Ui.Muted), Ui.Text(invoice.Code, 13, Ui.Primary, true)),
+            Ui.Row(Ui.Text("Hạn thanh toán", 13, Ui.Muted), Ui.Text(Ui.Date(invoice.DueDate), 13, bold: true)),
+            Ui.Row(Ui.Text("Tổng cộng", 14), Ui.Text(Ui.Money(invoice.Total), 20, Ui.Primary, true)),
+            Ui.Action("Chi tiết " + invoice.Code, () => Open(new InvoicePage(invoice)), true)));
+        if (invoice.Status != "paid")
+            Body.Add(Ui.Card(Ui.Text("Cần hỗ trợ thanh toán?", 15, bold: true),
+                Ui.Text("Liên hệ ban quản lý " + App.Api.Account.TenantName + " và cung cấp mã hóa đơn để được hướng dẫn.", 13, Ui.Muted)));
     }
 }
 
@@ -26,14 +52,25 @@ public sealed class InvoicePage(InvoiceDto invoice) : DataPage("Chi tiết hóa 
         Body.Add(Ui.Text(invoice.Code, 13, Ui.Muted));
         Body.Add(Ui.Section($"Hóa đơn tháng {invoice.Month}"));
         Body.Add(Ui.Status(invoice.Status));
-        foreach (var item in invoice.Items)
-            Body.Add(Ui.Card(Ui.Text(item.Description, bold: true),
-                Ui.Text($"{item.Quantity} {item.Unit} × {Ui.Money(item.UnitPrice)}", 13, Ui.Muted),
-                Ui.Text(Ui.Money(item.Amount), 19, Ui.Teal, true)));
-        Body.Add(Ui.Card(Ui.Text("Tổng cộng", bold: true), Ui.Text(Ui.Money(invoice.Total), 28, Ui.Teal, true),
-            Ui.Text($"Hạn thanh toán {invoice.DueDate}", 14, Ui.Muted)));
+        foreach (var item in invoice.Items) Body.Add(Line(item, invoice.Status));
+        Body.Add(Ui.Card(Ui.Text("Tổng cộng", bold: true), Ui.Text(Ui.Money(invoice.Total), 28, Ui.Primary, true),
+            Ui.Text("Hạn thanh toán " + Ui.Date(invoice.DueDate), 14, Ui.Muted)));
         if (invoice.Status != "paid") Body.Add(Ui.Text("Liên hệ ban quản lý để được hướng dẫn thanh toán. Thanh toán trực tuyến chưa được cấu hình trong bản local.", 14, Ui.Muted));
         return Task.CompletedTask;
+    }
+    public static View Line(InvoiceLine item, string status)
+    {
+        var glyph = item.Description.Contains("nước", StringComparison.OrdinalIgnoreCase) ? "\ue798"
+            : item.Description.Contains("điện", StringComparison.OrdinalIgnoreCase) ? "\uec1c"
+            : item.Description.Contains("xe", StringComparison.OrdinalIgnoreCase) ? "\ue54f" : "\uea40";
+        var calculation = Ui.Card(Ui.Columns(
+            Ui.Stack(Ui.Text("Khối lượng", 11, Ui.Muted), Ui.Text($"{item.Quantity} {item.Unit}", 14)),
+            Ui.Stack(Ui.Text("Đơn giá", 11, Ui.Muted), Ui.Text(Ui.Money(item.UnitPrice), 14))));
+        calculation.BackgroundColor = Ui.Background;
+        calculation.StrokeThickness = 0;
+        calculation.Padding = 12;
+        return Ui.Card(Ui.Leading(Ui.IconBadge(glyph), Ui.Text(item.Description, 15, bold: true)), calculation,
+            Ui.Row(Ui.Status(status), Ui.Text(Ui.Money(item.Amount), 20, bold: true)));
     }
 }
 
@@ -72,17 +109,19 @@ public sealed class ParcelsPage() : DataPage("Bưu kiện")
     }
 }
 
-public sealed class ShiftsPage() : DataPage("Lịch trực")
+public sealed class ShiftsPage() : DataPage("Bảng công")
 {
     protected override async Task Load()
     {
-        var shifts = await App.Api.Get<List<ShiftDto>>("shifts");
+        var shifts = await App.Api.Get<List<WorkRecordDto>>("work-records");
         Body.Clear();
-        Body.Add(Ui.Section("Lịch phân công của bạn"));
-        if (shifts.Count == 0) Empty("Bạn chưa có lịch trực được phân công.");
+        Body.Add(Ui.Section("Bảng công theo tháng"));
+        if (shifts.Count == 0) Empty("Chưa có bảng công của bạn.");
         foreach (var s in shifts)
-            Body.Add(Ui.Card(Ui.Text(s.Date, 14, Ui.Teal, true), Ui.Text(s.ShiftName, 23, bold: true),
-                Ui.Text(s.Department), Ui.Text(s.Notes ?? "Không có ghi chú", 14, Ui.Muted)));
+            Body.Add(Ui.Card(Ui.Text("Tháng " + s.Month, 20, Ui.Teal, true),
+                Ui.Text($"Ngày công tiêu chuẩn: {s.StandardDays}"),
+                Ui.Text($"Nghỉ có lương: {s.PaidLeaveDays} · Không lương: {s.UnpaidLeaveDays}"),
+                Ui.Text($"Giờ làm thêm: {s.OvertimeHours}"), Ui.Text(s.Note ?? "Không có ghi chú", 14, Ui.Muted)));
     }
 }
 
@@ -98,12 +137,6 @@ public sealed class ProfilePage() : DataPage("Cá nhân")
             Ui.Text(App.Api.IsResident ? "Căn hộ " + p.Account.ApartmentCode : p.JobTitle ?? "Nhân viên")));
         Body.Add(Ui.Card(Ui.Section("Thông tin liên hệ"), Ui.Text(p.Phone), Ui.Text(p.Email)));
         if (!string.IsNullOrEmpty(p.Department)) Body.Add(Ui.Card(Ui.Section("Bộ phận"), Ui.Text(p.Department)));
-        if (App.Api.IsResident)
-        {
-            Body.Add(Ui.Section("Phương tiện"));
-            if (p.Vehicles.Count == 0) Empty("Chưa có phương tiện đăng ký.");
-            foreach (var vehicle in p.Vehicles) Body.Add(Ui.Card(Ui.Text(vehicle.Plate, 20, bold: true), Ui.Text(vehicle.Type)));
-        }
         Body.Add(Ui.Text("EzCondo · Phiên bản local 1.0.0", 12, Ui.Muted));
         Body.Add(Ui.Action("Đăng xuất", async () =>
         {

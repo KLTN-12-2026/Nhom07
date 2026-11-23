@@ -9,26 +9,34 @@ public sealed class LoginPage : DataPage
     {
         Body.Clear();
         Body.Add(new BoxView { HeightRequest = 24, Color = Colors.Transparent });
-        Body.Add(Ui.Text("EzCondo", 36, Ui.Teal, true));
+        Body.Add(Ui.Text("EzCondo", 36, Ui.Primary, true));
         Body.Add(Ui.Text("Kết nối cuộc sống\ntại chung cư của bạn", 26, bold: true));
         Body.Add(Ui.Text("Cư dân & nhân viên", 16, Ui.Muted));
-        Body.Add(Ui.Card(Ui.Text("BẢN LOCAL · TÀI KHOẢN DEMO", 12, Ui.Teal, true),
-            Ui.Text("Chọn tài khoản có sẵn để trải nghiệm dữ liệu chung cư. Phiên demo chỉ dùng khi chạy local.", 14, Ui.Muted)));
+        Body.Add(Ui.Card(Ui.Text("TÀI KHOẢN EZCONDO", 12, Ui.Primary, true),
+            Ui.Text("Đăng nhập bằng email và mật khẩu cư dân hoặc nhân viên của chung cư.", 14, Ui.Muted)));
         var url = Ui.Entry("Địa chỉ API", 250);
         url.Text = App.Api.BaseUrl;
         url.Keyboard = Keyboard.Url;
         Body.Add(Ui.Field("Máy chủ API", url));
         Body.Add(Ui.Action("Kết nối máy chủ", async () => { App.Api.Configure(url.Text ?? ""); await Reload(); }, true));
+        var connecting = Ui.Text("Đang chờ máy chủ local sẵn sàng…", 14, Ui.Muted);
+        Body.Add(connecting);
         try
         {
-            var accounts = await App.Api.Get<List<Account>>("demo-accounts");
-            if (accounts.Count == 0) { Body.Add(Ui.Text("Chưa có tài khoản cư dân hoặc nhân viên hợp lệ.")); return; }
-            var picker = Ui.Picker("Chọn tài khoản", accounts.Select(a => $"{a.Name} · {(a.Role == "resident" ? "Cư dân" : "Nhân viên")}"));
-            Body.Add(Ui.Field("Tài khoản", picker));
-            Body.Add(Ui.Action("Đăng nhập demo", async () =>
+            await App.Api.GetServerInfo();
+            var email = Ui.Entry("Email", 254);
+            email.Keyboard = Keyboard.Email;
+            var password = Ui.Entry("Mật khẩu", 256);
+            password.IsPassword = true;
+            password.IsTextPredictionEnabled = false;
+            Body.Add(Ui.Field("Email", email));
+            Body.Add(Ui.Field("Mật khẩu", password));
+            Body.Add(Ui.Action("Đăng nhập", async () =>
             {
                 App.Api.Configure(url.Text ?? "");
-                await App.Api.SignIn(accounts[picker.SelectedIndex].Id);
+                if (string.IsNullOrEmpty(password.Text)) throw new InvalidOperationException("Vui lòng nhập mật khẩu.");
+                await App.Api.SignIn(Ui.Required(email.Text, 3, "Email"), password.Text);
+                password.Text = "";
                 App.ShowHome();
             }));
         }
@@ -36,5 +44,6 @@ public sealed class LoginPage : DataPage
         {
             Body.Add(Ui.Card(Ui.Text(error.Message, color: Color.FromArgb("#AD4736")), Ui.Action("Thử lại", Reload)));
         }
+        finally { Body.Remove(connecting); }
     }
 }

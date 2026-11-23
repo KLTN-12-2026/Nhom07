@@ -18,6 +18,10 @@ function nodes() {
 }
 const [command = 'snapshot', target, value] = process.argv.slice(2);
 if (command === 'snapshot') console.log(JSON.stringify(nodes().filter(n => n.text || n['content-desc']).map(n => ({ text: n.text, desc: n['content-desc'], class: n.class, bounds: n.bounds })), null, 2));
+else if (command === 'assert') {
+    assert(nodes().some(n => n.text === target || n['content-desc'] === target), 'Android text or action not found: ' + target);
+    console.log('PASS Android UI: ' + target);
+}
 else if (command === 'tap' || command === 'input') {
     const matches = n => n.text === target || n['content-desc'] === target;
     let node;
@@ -25,6 +29,7 @@ else if (command === 'tap' || command === 'input') {
         const visible = nodes();
         node = visible.find(n => matches(n) && n.class === 'android.widget.Button')
             || visible.find(n => matches(n) && n.class === 'android.widget.EditText')
+            || visible.find(n => matches(n) && n.clickable === 'true')
             || visible.find(n => n.text === target) || visible.find(matches);
         if (node) break;
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 400);

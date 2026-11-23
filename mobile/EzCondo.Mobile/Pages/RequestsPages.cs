@@ -61,11 +61,13 @@ public sealed class ServicesPage() : DataPage("Yêu cầu dịch vụ")
 
 public sealed class ServiceForm : ContentPage
 {
-    public ServiceForm()
+    public ServiceForm(string? selectedType = null)
     {
         Title = "Tạo yêu cầu dịch vụ";
         BackgroundColor = Ui.Background;
         var type = Ui.Picker("Loại dịch vụ", Choices.ServiceTypes);
+        var selectedIndex = Array.IndexOf(Choices.ServiceTypes, selectedType);
+        if (selectedIndex >= 0) type.SelectedIndex = selectedIndex;
         var date = new DatePicker { Date = DateTime.Today.AddDays(1), MinimumDate = DateTime.Today, MaximumDate = DateTime.Today.AddDays(90), Format = "dd/MM/yyyy", TextColor = Ui.Ink };
         var details = Ui.Editor("Mô tả nhu cầu và thời gian thuận tiện để liên hệ…", 2000);
         var body = Ui.Stack(Ui.Section("Bạn cần dịch vụ gì?"), Ui.Text("Thông tin liên hệ và căn hộ lấy từ tài khoản của bạn.", color: Ui.Muted),
