@@ -4,6 +4,8 @@ The MAUI app now calls **EzCondo.BackEndServer** (ASP.NET Core 8 / EF Core / Pos
 
 ## Run on this computer
 
+Install the .NET 9 SDK selected by the repository's `global.json` and the Android MAUI workload. The shared backend still targets .NET 8 and needs the ASP.NET Core 8 runtime.
+
 From the repository root:
 
 ```powershell
@@ -66,7 +68,7 @@ The user explicitly requested a new local PostgreSQL test database. It uses the 
 
 PostgreSQL Windows binaries were downloaded from the official EDB binaries page: https://www.enterprisedb.com/download-postgresql-binaries . Runtime files are under `mobile/.local/postgresql/pgsql`. A new computer must extract the official Windows archive there, then run `Initialize-Postgres.ps1` and `Start-Local.ps1 -ApiOnly` before F5.
 
-Connection credentials, random local JWT key, database files and test account credentials are kept under ignored `mobile/.local`. Never point the local seeder at a website/production database. It rejects connections other than the isolated local database. The Mobile Local profile skips the website's platform-account seeder because placeholder platform account configuration is incomplete; other profiles retain their original seeding behavior.
+Connection credentials, random local JWT key, database files and test account credentials are kept under ignored `mobile/.local`. Never point the local seeder at a website/production database. It rejects connections other than the isolated local database. Mobile Local starts without PayOS or SMTP credentials and skips the platform account and PayOS seeders and the invitation and subscription workers. Website profiles retain their existing configuration validation and startup behavior.
 
 To later use the actual website database, configure its connection and JWT settings through the existing backend configuration mechanism and use the corresponding backend URL in mobile. Do not use the Mobile Local profile for that connection. Review and back up that database before running the backend's pre-existing automatic migrations.
 

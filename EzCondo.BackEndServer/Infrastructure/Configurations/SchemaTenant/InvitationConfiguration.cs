@@ -36,6 +36,19 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 				.HasColumnType("tenant.invitation_status_enum")
 				.IsRequired();
 
+			b.Property(x => x.EmailSentAt)
+				.HasColumnType("timestamptz");
+
+			b.Property(x => x.LastEmailAttemptAt)
+				.HasColumnType("timestamptz");
+
+			b.Property(x => x.EmailSendAttemptCount)
+				.HasDefaultValue(0)
+				.IsRequired();
+
+			b.Property(x => x.LastEmailErrorCode)
+				.HasMaxLength(100);
+
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Invitations)
 				.HasForeignKey(x => x.TenantId)
@@ -61,14 +74,21 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.HasIndex(x => new { x.TenantId, x.Email, x.TokenHash }).IsUnique();
 
-			b.HasIndex(x => new { x.TenantId, x.Email, x.RoleId })
-				.HasDatabaseName("ix_invitations_active")
-				.IsUnique()
-				.HasFilter("status = 'sent' AND is_deleted = false");
+			b.HasIndex(x => new
+			{
+				x.TenantId,
+				x.RoleId
+			})
+			.HasDatabaseName("ux_invitations_active_tenant_role")
+			.IsUnique()
+			.HasFilter(
+				"status IN ('pending_delivery', 'sent') " +
+				"AND is_deleted = false");
 
 			b.HasIndex(x => new { x.Status, x.ExpiresAt })
 				.HasDatabaseName("ix_invitations_expiring")
-				.HasFilter("status = 'sent'");
+				.HasFilter(
+					"status IN ('pending_delivery', 'sent')");
 
 			b.ToTable(t =>
 			{
@@ -81,6 +101,13 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 				t.HasCheckConstraint(
 					"ck_invitations_expiry",
 					"expires_at > created_at");
+				t.HasCheckConstraint(
+					"ck_invitations_email_attempt_count",
+					"email_send_attempt_count >= 0");
+
+				t.HasCheckConstraint(
+					"ck_invitations_sent_email",
+					"status <> 'sent' OR email_sent_at IS NOT NULL");
 			});
 		}
 	}

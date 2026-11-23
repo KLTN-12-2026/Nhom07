@@ -52,9 +52,10 @@ namespace EzCondo.BackEndServer.Infrastructure
 					cancellationToken);
 			}
 
-			foreach (var account in options.Accounts)
+			foreach (var (accountKey, account) in options.Accounts)
 			{
 				await SeedAccountAsync(
+					accountKey,
 					account,
 					userManager,
 					dbcontext,
@@ -67,6 +68,7 @@ namespace EzCondo.BackEndServer.Infrastructure
 		}
 
 			private static async Task SeedAccountAsync(
+				string accountKey,
 				PlatformAccountConfig account,
 				UserManager<User> userManager,
 				ApplicationDbContext dbcontext,
@@ -111,16 +113,64 @@ namespace EzCondo.BackEndServer.Infrastructure
 					$"Email '{email}' đã thuộc một tenant.");
 			}
 
-			// Không thay mật khẩu đã có; chỉ bổ sung cho tài khoản chưa có mật khẩu.
-			if(!await userManager.HasPasswordAsync(platformUser))
+			var hasPassword = await userManager.HasPasswordAsync(platformUser);
+
+			if (!hasPassword)
 			{
-				var passwordResult = await userManager.AddPasswordAsync(
-					platformUser,
-					account.Password);
+				var addPasswordResult = await userManager
+					.AddPasswordAsync(
+						platformUser,
+						account.Password);
 
 				EnsureSucceeded(
-					passwordResult,
+					addPasswordResult,
 					$"Không thể thêm mật khẩu cho '{email}'");
+			}
+			else
+			{
+				var passwordMatches = await userManager
+					.CheckPasswordAsync(
+						platformUser,
+						account.Password);
+
+				if (!passwordMatches)
+				{
+					var removePasswordResult =
+						await userManager.RemovePasswordAsync(platformUser);
+
+					EnsureSucceeded(
+						removePasswordResult,
+						$"Không thể xóa mật khẩu cũ của '{email}'");
+
+					var addPasswordResult =
+						await userManager.AddPasswordAsync(
+							platformUser,
+							account.Password);
+
+					EnsureSucceeded(
+						addPasswordResult,
+						$"Không thể lưu mật khẩu mới cho '{email}'");
+
+					var clearLockoutResult =
+						await userManager.SetLockoutEndDateAsync(
+							platformUser,
+							null);
+
+					EnsureSucceeded(
+						clearLockoutResult,
+						$"Không thể mở khóa tài khoản '{email}'");
+
+					var resetFailedCountResult =
+						await userManager.ResetAccessFailedCountAsync(platformUser);
+
+					EnsureSucceeded(
+						resetFailedCountResult,
+						$"Không thể đặt lại số lần đăng nhập sai của '{email}'");
+
+					logger.LogInformation(
+						"Đã đồng bộ mật khẩu cấu hình cho tài khoản Platform {Email}",
+						email);
+				}
 			}
 
 			platformUser.UserName = email;
@@ -198,20 +248,25 @@ namespace EzCondo.BackEndServer.Infrastructure
 
 		private static void ValidateConfiguration(PlatformAccountsOptions options)
 		{
-			foreach(var account in options.Accounts)
+			foreach(var (accountKey, account) in options.Accounts)
 			{
+				if (string.IsNullOrWhiteSpace(accountKey))
+				{
+					throw new InvalidOperationException(
+						"Khóa cấu hình tài khoản Platform không được để trống.");
+				}
+
 				if(string.IsNullOrWhiteSpace(account.Email) ||
 					string.IsNullOrWhiteSpace(account.Password) ||
 					string.IsNullOrWhiteSpace(account.FullName) ||
 					string.IsNullOrWhiteSpace(account.CitizenId))
 				{
 					throw new InvalidOperationException(
-						"Mỗi tài khoản Platform phải có Email, Pasword," +
-						" FullName và CitizentId.");
+						$"Tài khoản Platform {accountKey} phải có Email, Pasword, FullName và CitizentId.");
 				}
 			}
 
-			var duplicateEmails = options.Accounts
+			var duplicateEmails = options.Accounts.Values
 				.GroupBy(
 				x => x.Email.Trim(),
 				StringComparer.OrdinalIgnoreCase)

@@ -34,6 +34,12 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 				.HasMaxLength(30)
 				.IsRequired();
 
+			b.Property(x => x.ExpiredAt)
+				.HasColumnType("timestamptz");
+
+			b.Property(x => x.ExpirationReasonCode)
+				.HasMaxLength(50);
+
 			b.Property(x => x.Status)
 				.HasColumnType("platform.tenant_status_enum")
 				.IsRequired();

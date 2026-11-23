@@ -47,6 +47,12 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaPlatform
 				.HasDatabaseName("ix_subscription_attempt_invoice")
 				.IsDescending(false, true);
 
+			b.HasIndex(x => x.SubscriptionInvoiceId)
+				.HasDatabaseName(
+					"ux_subscription_payment_attempts_open_invoice")
+				.IsUnique()
+				.HasFilter(
+					"status IN ('pending', 'partially_paid')");
 		}
 	}
 }

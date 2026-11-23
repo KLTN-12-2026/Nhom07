@@ -1,10 +1,13 @@
 ﻿using EzCondo.BackEndServer.Contracts.SubscriptionPlans;
 using EzCondo.BackEndServer.Services.SubscriptionPlans;
 using Microsoft.AspNetCore.Mvc;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EzCondo.BackEndServer.Controllers
 {
 	[ApiController]
+	[Authorize(Policy = AuthPolicies.PlatformScope)]
 	[Route("api/platform/subscription-plans")]
 	public class SubscriptionPlansController(
 		ISubscriptionPlanService subscriptionService) 
@@ -85,6 +88,55 @@ namespace EzCondo.BackEndServer.Controllers
 			}
 
 			return Ok(result);
+		}
+
+		[HttpGet("{id:guid}/tenants")]
+		[ProducesResponseType<SubscriptionPlanTenantsResponse>(StatusCodes.Status200OK)]
+		[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<ActionResult<SubscriptionPlanTenantsResponse>> GetTenantsByPlan(
+			Guid id,
+			[FromQuery] GetSubscriptionPlanTenantsRequest request,
+			CancellationToken cancellationToken)
+		{
+			var result = await subscriptionService.GetTenantsByPlanAsync(
+				id,
+				request,
+				cancellationToken);
+
+			if (result.IsSuccess)
+			{
+				return Ok(result.Value);
+			}
+
+			return result.Failure switch
+			{
+				GetSubscriptionPlanTenantsFailure.PlanNotFound =>
+					NotFound(CreateProblem(
+						StatusCodes.Status404NotFound,
+						"subscription_plan_not_found",
+						"Không tìm thấy gói dịch vụ.")),
+
+					_ => Problem(
+						statusCode: StatusCodes.Status500InternalServerError,
+						title: "get_subscription_plan_tenants_failed",
+						detail: "Không thể tải danh sách tenant đang sử dụng gói.")
+			};
+		}
+
+		private static ProblemDetails CreateProblem(
+			int status,
+			string code,
+			string detail)
+		{
+			return new ProblemDetails
+			{
+				Status = status,
+				Title = code,
+				Detail = detail
+			};
 		}
 	}
 }

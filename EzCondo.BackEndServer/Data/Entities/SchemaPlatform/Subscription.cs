@@ -16,6 +16,7 @@
 		public SubscriptionPlan Plan { get; set; } = null!;
 
 		public ICollection<SubscriptionInvoice> SubscriptionInvoices { get; set; } = new List<SubscriptionInvoice>();
+		public ICollection<SubscriptionRenewalRequest> RenewalRequests { get; set; } = new List<SubscriptionRenewalRequest>();
 
 	}
 }

@@ -25,7 +25,9 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public Guid? SuspensionRequestedByAdminId { get; set; }
 		public DateTimeOffset? SuspensionNoticeSentAt { get; set; }
 		public DateTimeOffset? SuspendedAt { get; set; }
-		
+		public DateTimeOffset? ExpiredAt { get; set; }
+		public string? ExpirationReasonCode { get; set; }
+
 		public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 		public ICollection<Rule> Rules{ get; set; } = new List<Rule>();
 		public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
@@ -42,6 +44,7 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaPlatform
 		public ICollection<User> Users { get; set; } = new List<User>();
 		public ICollection<ProviderAccount> ProviderAccounts { get; set; } = new List<ProviderAccount>();
 		public ICollection<SubscriptionInvoice> SubscriptionInvoices { get; set; } = new List<SubscriptionInvoice>();
+		public ICollection<SubscriptionRenewalRequest> SubscriptionRenewalRequests { get; set; } = new List<SubscriptionRenewalRequest>();
 		public ICollection<InvoicePaymentAttempt> InvoicePaymentAttempts { get; set; } = new List<InvoicePaymentAttempt>();
 		public ICollection<InvoicePaymentAllocation> InvoicePaymentAllocations { get; set; } = new List<InvoicePaymentAllocation>();
 		public ICollection<PayrollDisbursement> PayrollDisbursements { get; set; } = new List<PayrollDisbursement>();

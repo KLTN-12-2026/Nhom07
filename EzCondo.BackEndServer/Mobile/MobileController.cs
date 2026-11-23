@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using EzCondo.BackEndServer.Data;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
 using EzCondo.BackEndServer.Data.Entities.SchemaTenant;
@@ -53,7 +52,7 @@ public sealed class MobileController(ApplicationDbContext db, UserManager<User> 
         var token = new JwtSecurityToken(jwt.Issuer, jwt.Audience + ".mobile",
             [new Claim("sub", user.Id.ToString()), new Claim("stamp", user.SecurityStamp ?? "")],
             expires: DateTime.UtcNow.AddMinutes(Math.Clamp(jwt.AccessTokenMinutes, 1, 60)),
-            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)), SecurityAlgorithms.HmacSha256));
+            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Convert.FromBase64String(jwt.SigningKey)), SecurityAlgorithms.HmacSha256));
         return Ok(new SessionResponse(new JwtSecurityTokenHandler().WriteToken(token), context.Value.Account));
     }
 

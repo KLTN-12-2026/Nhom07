@@ -26,6 +26,7 @@ namespace EzCondo.BackEndServer.Data
 			dataSourceBuilder.EnableDynamicJson();
 
 			dataSourceBuilder.MapEnum<SubscriptionInvoiceStatus>("platform.subscription_invoice_status");
+			dataSourceBuilder.MapEnum<SubscriptionRenewalRequestStatus>("platform.subscription_renewal_request_status");
 			dataSourceBuilder.MapEnum<SubscriptionPaymentAttemptStatus>("platform.subscription_payment_attempt_status");
 			dataSourceBuilder.MapEnum<SubscriptionStatusEnum>("platform.subscription_status_enum");
 			dataSourceBuilder.MapEnum<TenantStatusEnum>("platform.tenant_status_enum");

@@ -4,7 +4,8 @@
 	{
 		public const string SectionName = "PlatformAccounts";
 
-		public List<PlatformAccountConfig> Accounts { get; set; } = [];
+		public Dictionary<string, PlatformAccountConfig> Accounts { get; set; }
+			= new(StringComparer.OrdinalIgnoreCase);
 	}
 
 	public sealed class PlatformAccountConfig

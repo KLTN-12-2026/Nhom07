@@ -1,4 +1,3 @@
-using System.Text;
 using EzCondo.BackEndServer.Infrastructure.Authentication.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -30,7 +29,7 @@ public static class MobileApiRegistration
                 ValidateIssuer = true, ValidIssuer = jwt.Issuer,
                 ValidateAudience = true, ValidAudience = jwt.Audience + ".mobile",
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+                IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(jwt.SigningKey)),
                 ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30)
             };
         });

@@ -11,6 +11,8 @@ namespace EzCondo.BackEndServer.Data.Enums
 		[PgName("revoked")]
 		Revoked,
 		[PgName("expired")]
-		Expired
+		Expired,
+		[PgName("pending_delivery")] //Invitation đã được tạo nhưng gmail chưa xác nhận.
+		PendingDelivery
 	}
 }

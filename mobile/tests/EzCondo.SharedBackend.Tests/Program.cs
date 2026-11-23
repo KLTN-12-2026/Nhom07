@@ -1,15 +1,21 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using EzCondo.BackEndServer.Data;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
 using EzCondo.BackEndServer.Data.Entities.SchemaPlatform;
 using EzCondo.BackEndServer.Data.Entities.SchemaSecurity;
 using EzCondo.BackEndServer.Data.Entities.SchemaTenant;
 using EzCondo.BackEndServer.Data.Enums;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
 using EzCondo.BackEndServer.Mobile;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
 if (args is ["--cold-start", var localPath])
@@ -22,9 +28,10 @@ if (args is ["--cold-start", var localPath])
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.WebHost.UseUrls("http://127.0.0.1:0");
+var signingKey = new SymmetricSecurityKey(RandomNumberGenerator.GetBytes(32));
 builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> {
     ["Jwt:Issuer"] = "test", ["Jwt:Audience"] = "test",
-    ["Jwt:SigningKey"] = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"),
+    ["Jwt:SigningKey"] = Convert.ToBase64String(signingKey.Key),
     ["Jwt:AccessTokenMinutes"] = "15" });
 var postgres = Environment.GetEnvironmentVariable("EZCONDO_TEST_POSTGRES");
 if (postgres is null)
@@ -46,11 +53,22 @@ else
 builder.Services.AddIdentityCore<User>(o => { o.Lockout.MaxFailedAccessAttempts = 5; })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllers().AddApplicationPart(typeof(MobileController).Assembly);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = "test", ValidAudience = "test", IssuerSigningKey = signingKey
+    };
+});
+builder.Services.AddAuthorization(options => options.AddPolicy(AuthPolicies.PlatformScope,
+    policy => policy.RequireAuthenticatedUser().RequireClaim(AppClaimTypes.Scope, "platform")));
 builder.Services.AddMobileApi(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<EzCondo.BackEndServer.Services.SubscriptionPlans.ISubscriptionPlanService,
     EzCondo.BackEndServer.Services.SubscriptionPlans.SubscriptionPlanService>();
 var app = builder.Build();
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();
@@ -61,6 +79,7 @@ var tenant = Guid.NewGuid(); var otherTenant = Guid.NewGuid();
 var resident = Guid.NewGuid(); var neighbor = Guid.NewGuid(); var staff = Guid.NewGuid();
 var ownInvoice = Guid.NewGuid(); var foreignInvoice = Guid.NewGuid();
 Guid complaintId;
+var unassignedComplaintId = Guid.NewGuid();
 const string password = "Integration!2026test";
 using (var scope = app.Services.CreateScope())
 {
@@ -96,13 +115,21 @@ using (var scope = app.Services.CreateScope())
     var foreignResident = new User { Id = Guid.NewGuid(), UserName = "other@test.local", Email = "other@test.local", FullName = "Other tenant resident", TenantId = otherTenant, Status = UserStatusEnum.Active };
     Check((await users.CreateAsync(foreignResident, password)).Succeeded, "foreign tenant fixture user created");
     db.Complaints.AddRange(own,
-        new Complaint { Id = Guid.NewGuid(), TenantId = tenant, CreatedByResident = neighbor, Title = "Neighbor complaint", Message = "Private" },
+        new Complaint { Id = unassignedComplaintId, TenantId = tenant, CreatedByResident = neighbor, Title = "Neighbor complaint", Message = "Private" },
         new Complaint { Id = Guid.NewGuid(), TenantId = otherTenant, CreatedByResident = foreignResident.Id, Title = "Other tenant", Message = "Private" });
     await db.SaveChangesAsync();
 }
 try
 {
     Check((await client.GetAsync("/api/mobile/profile")).StatusCode == HttpStatusCode.Unauthorized, "anonymous requests rejected");
+    var webToken = new JwtSecurityToken("test", "test", [new Claim(AppClaimTypes.Scope, "platform")],
+        expires: DateTime.UtcNow.AddMinutes(5),
+        signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256));
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtSecurityTokenHandler().WriteToken(webToken));
+    Check(await client.GetFromJsonAsync<bool>("/web-auth-probe"), "web token authenticates the web scheme");
+    Check((await client.GetAsync("/api/platform/subscription-plans")).IsSuccessStatusCode, "platform web token can read subscription plans");
+    Check((await client.GetAsync("/api/mobile/profile")).StatusCode == HttpStatusCode.Unauthorized, "web token is rejected by the mobile scheme");
+    client.DefaultRequestHeaders.Authorization = null;
     Check((await client.PostAsJsonAsync("/api/mobile/sessions", new { email = "resident@test.local", password = "wrong" })).StatusCode == HttpStatusCode.Unauthorized, "invalid password rejected");
     Check((await client.PostAsJsonAsync("/api/mobile/sessions", new { accountId = resident })).StatusCode == HttpStatusCode.BadRequest, "demo impersonation rejected");
     var session = await client.PostAsJsonAsync("/api/mobile/sessions", new { email = "resident@test.local", password });
@@ -125,9 +152,10 @@ try
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", json.GetProperty("token").GetString());
     complaints = await client.GetStringAsync("/api/mobile/complaints");
     Check(complaints.Contains("Own complaint") && !complaints.Contains("Neighbor complaint") && !complaints.Contains("Other tenant"), "staff sees assigned complaints only");
+    Check((await client.PatchAsJsonAsync($"/api/mobile/complaints/{unassignedComplaintId}/status", new { expectedStatus = "in_progress", status = "resolved" })).StatusCode == HttpStatusCode.NotFound, "staff cannot resolve an unassigned complaint");
     Check((await client.PatchAsJsonAsync($"/api/mobile/complaints/{complaintId}/status", new { expectedStatus = "in_progress", status = "resolved" })).IsSuccessStatusCode, "assigned staff can resolve complaint");
     Check((await client.GetAsync("/WeatherForecast")).IsSuccessStatusCode, "existing web controller remains reachable");
-    Check((await client.GetAsync("/api/platform/subscription-plans")).IsSuccessStatusCode, "existing web subscription-plan API remains reachable");
+    Check((await client.GetAsync("/api/platform/subscription-plans")).StatusCode == HttpStatusCode.Unauthorized, "mobile token cannot read platform subscription plans");
     Check((await client.GetAsync("/api/mobile/invoices")).StatusCode == HttpStatusCode.Forbidden, "staff cannot read resident invoices");
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
