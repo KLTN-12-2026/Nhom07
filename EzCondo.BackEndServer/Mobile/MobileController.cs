@@ -1,17 +1,18 @@
 using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using EzCondo.BackEndServer.Contracts.Authentication.Tenant;
 using EzCondo.BackEndServer.Data;
 using EzCondo.BackEndServer.Data.Entities.SchemaIdentity;
+using EzCondo.BackEndServer.Data.Entities.SchemaSecurity;
 using EzCondo.BackEndServer.Data.Entities.SchemaTenant;
 using EzCondo.BackEndServer.Data.Enums;
-using EzCondo.BackEndServer.Infrastructure.Authentication.Options;
+using EzCondo.BackEndServer.Infrastructure.Authentication;
+using EzCondo.BackEndServer.Services.Authentication;
 using EzCondo.Mobile.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace EzCondo.BackEndServer.Mobile;
@@ -20,7 +21,7 @@ namespace EzCondo.BackEndServer.Mobile;
 [Route("api/mobile")]
 [Authorize(AuthenticationSchemes = MobileApiRegistration.Scheme)]
 public sealed class MobileController(ApplicationDbContext db, UserManager<User> users,
-    MobileIdentity identity, IConfiguration configuration) : ControllerBase
+    MobileIdentity identity, IAuthService auth, TimeProvider timeProvider) : ControllerBase
 {
     public sealed record Credentials([Required, EmailAddress, MaxLength(254)] string Email,
         [Required, MaxLength(256)] string Password);
@@ -37,31 +38,47 @@ public sealed class MobileController(ApplicationDbContext db, UserManager<User> 
     [EnableRateLimiting("MobileLogin")]
     public async Task<IActionResult> Login(Credentials request, CancellationToken ct)
     {
-        var user = await users.FindByEmailAsync(request.Email.Trim());
-        if (user is null || await identity.Find(user.Id, ct) is null)
-            return Unauthorized(new { message = "Thông tin đăng nhập không hợp lệ hoặc tài khoản không có quyền mobile." });
-        if (!await users.CheckPasswordAsync(user, request.Password))
-        {
-            await users.AccessFailedAsync(user);
-            return Unauthorized(new { message = "Thông tin đăng nhập không hợp lệ hoặc tài khoản bị khóa." });
-        }
-        await users.ResetAccessFailedCountAsync(user);
-        var context = await identity.Find(user.Id, ct);
-        if (context is null) return Unauthorized();
-        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-        var token = new JwtSecurityToken(jwt.Issuer, jwt.Audience + ".mobile",
-            [new Claim("sub", user.Id.ToString()), new Claim("stamp", user.SecurityStamp ?? "")],
-            expires: DateTime.UtcNow.AddMinutes(Math.Clamp(jwt.AccessTokenMinutes, 1, 60)),
-            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Convert.FromBase64String(jwt.SigningKey)), SecurityAlgorithms.HmacSha256));
-        return Ok(new SessionResponse(new JwtSecurityTokenHandler().WriteToken(token), context.Value.Account));
+        var email = request.Email.Trim();
+        var user = await users.FindByEmailAsync(email);
+        var context = user is null ? null : await identity.Find(user.Id, ct);
+        if (context?.User.Tenant is not { } tenant)
+            return InvalidCredentials();
+
+        var sessionId = Guid.NewGuid();
+        var result = await auth.LoginTenantAsync(new TenantLoginRequest(tenant.Slug, email, request.Password), ct, sessionId);
+        if (result.Value is not { } session || session.UserId != context.Value.User.Id)
+            return InvalidCredentials();
+
+        var account = context.Value.Account;
+        if (account.Role == "staff")
+            account = account with { CanInviteResidents = await identity.CanInviteResidents(session.UserId, tenant.Id, ct) };
+
+        var now = timeProvider.GetUtcNow();
+        if (db.Database.IsRelational())
+            await db.MobileSessions.Where(x => x.ExpiresAt <= now).ExecuteDeleteAsync(ct);
+        db.MobileSessions.Add(new MobileSession { Id = sessionId, UserId = session.UserId, ExpiresAt = session.ExpiresAt });
+        await db.SaveChangesAsync(ct);
+        return Ok(new SessionResponse(session.AccessToken, account));
     }
 
-    private async Task<(User User, Account Account)?> Current(CancellationToken ct)
+    [HttpDelete("sessions/current")]
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        var context = await identity.Find(User, ct);
-        // Check live account/role/tenant state and password changes on every request.
-        return context is { } c && User.FindFirstValue("stamp") == c.User.SecurityStamp ? context : null;
+        if (!Guid.TryParse(User.FindFirstValue(AppClaimTypes.JwtId), out var sessionId)) return Unauthorized();
+        var session = await db.MobileSessions.FindAsync([sessionId], ct);
+        if (session is not null)
+        {
+            db.MobileSessions.Remove(session);
+            try { await db.SaveChangesAsync(ct); }
+            catch (DbUpdateConcurrencyException) { return NoContent(); }
+        }
+        return NoContent();
     }
+
+    private UnauthorizedObjectResult InvalidCredentials() => Unauthorized(new
+        { message = "Thông tin đăng nhập không hợp lệ hoặc tài khoản không có quyền mobile." });
+
+    private Task<(User User, Account Account)?> Current(CancellationToken ct) => identity.Find(User, ct);
 
     [HttpGet("profile")]
     public async Task<IActionResult> Profile(CancellationToken ct)
@@ -181,5 +198,25 @@ public sealed class MobileController(ApplicationDbContext db, UserManager<User> 
             .OrderByDescending(x => x.PayrollPeriod).ToListAsync(ct);
         return Ok(rows.Select(x => new WorkRecordDto(x.PayrollPeriod.ToString("yyyy-MM"), x.StandardWorkingDay,
             x.PaidLeaveDay, x.UnpaidLeaveDay, x.OvertimeHourNormal + x.OvertimeHourWeekend + x.OvertimeHourHoliday, x.Note)));
+    }
+
+    [HttpGet("payrolls")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Payrolls(CancellationToken ct)
+    {
+        var current = await Current(ct);
+        if (current is null) return Unauthorized();
+        var (user, account) = current.Value;
+        if (account.Role != "staff") return Forbid(MobileApiRegistration.Scheme);
+
+        var rows = await db.PayrollDetails.AsNoTracking()
+            .Where(x => x.TenantId == user.TenantId && x.StaffReceive == user.Id
+                && !x.Payroll.IsDeleted && x.Payroll.Status == PayrollStatusEnum.Published)
+            .OrderByDescending(x => x.Payroll.PublishedAt ?? x.Payroll.CreatedAt)
+            .ThenBy(x => x.Id)
+            .Select(x => new PayrollDto(x.Payroll.Title, x.Payroll.PublishedAt, x.BaseSalary, x.Allowance,
+                x.Deduction, x.BaseSalary + x.Allowance - x.Deduction))
+            .ToListAsync(ct);
+        return Ok(rows);
     }
 }

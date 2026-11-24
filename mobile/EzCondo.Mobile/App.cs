@@ -28,10 +28,10 @@ public sealed class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState) => new(Api.Account == null
         ? new NavigationPage(new LoginPage()) : new MainTabs());
-    public static void ShowLogin()
+    public static void ShowLogin(string? email = null)
     {
         Api.SignOut();
-        Current!.Windows[0].Page = new NavigationPage(new LoginPage());
+        Current!.Windows[0].Page = new NavigationPage(new LoginPage(email));
     }
     public static void ShowHome() => Current!.Windows[0].Page = new MainTabs();
 }

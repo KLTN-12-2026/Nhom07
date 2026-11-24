@@ -140,7 +140,11 @@ public sealed class ProfilePage() : DataPage("Cá nhân")
         Body.Add(Ui.Text("EzCondo · Phiên bản local 1.0.0", 12, Ui.Muted));
         Body.Add(Ui.Action("Đăng xuất", async () =>
         {
-            if (await DisplayAlert("Đăng xuất", "Kết thúc phiên sử dụng trên thiết bị này?", "Đăng xuất", "Ở lại")) App.ShowLogin();
+            if (await DisplayAlert("Đăng xuất", "Kết thúc phiên sử dụng trên thiết bị này?", "Đăng xuất", "Ở lại"))
+            {
+                await App.Api.SignOutCurrent();
+                App.ShowLogin();
+            }
         }, true));
     }
 }

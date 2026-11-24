@@ -33,4 +33,14 @@ public sealed class MobileIdentity(ApplicationDbContext db)
     public Task<(User User, Account Account)?> Find(ClaimsPrincipal principal, CancellationToken ct)
         => Guid.TryParse(principal.FindFirstValue("sub"), out var id) ? Find(id, ct)
             : Task.FromResult<(User, Account)?>(null);
+
+    public Task<bool> CanInviteResidents(Guid staffId, Guid tenantId, CancellationToken ct) => (
+        from assignment in db.UserRoles
+        join permission in db.RolePermissions on assignment.RoleId equals permission.RoleId
+        where assignment.UserId == staffId && assignment.TenantId == tenantId
+            && assignment.Scope == RoleScopeEnum.Tenant && assignment.RevokedAt == null
+            && assignment.Role.TenantId == tenantId && !assignment.Role.IsDeleted
+            && assignment.Role.Scope == RoleScopeEnum.Tenant && assignment.Role.Code == DbInitializer.StaffRoleCode
+            && permission.Scope == RoleScopeEnum.Tenant && permission.PermissionCode == "tenant.residents.invite"
+        select assignment.Id).AnyAsync(ct);
 }

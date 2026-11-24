@@ -11,7 +11,8 @@ namespace EzCondo.BackEndServer.Services.Authentication
 
 		Task<TenantLoginResult> LoginTenantAsync(
 			TenantLoginRequest request,
-			CancellationToken cancellationToken = default);
+			CancellationToken cancellationToken = default,
+			Guid? mobileSessionId = null);
 
 		Task<LogoutResult> LogoutAllAsync(
 			Guid userId,

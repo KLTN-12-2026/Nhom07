@@ -2,11 +2,11 @@ using EzCondo.Mobile.Contracts;
 
 namespace EzCondo.Mobile.Pages;
 
-public sealed class LoginPage : DataPage
+public sealed class LoginPage(string? prefilledEmail = null) : DataPage("EzCondo")
 {
-    public LoginPage() : base("EzCondo") { NavigationPage.SetHasNavigationBar(this, false); }
     protected override async Task Load()
     {
+        NavigationPage.SetHasNavigationBar(this, false);
         Body.Clear();
         Body.Add(new BoxView { HeightRequest = 24, Color = Colors.Transparent });
         Body.Add(Ui.Text("EzCondo", 36, Ui.Primary, true));
@@ -25,6 +25,7 @@ public sealed class LoginPage : DataPage
         {
             await App.Api.GetServerInfo();
             var email = Ui.Entry("Email", 254);
+            email.Text = prefilledEmail;
             email.Keyboard = Keyboard.Email;
             var password = Ui.Entry("Mật khẩu", 256);
             password.IsPassword = true;
@@ -39,6 +40,7 @@ public sealed class LoginPage : DataPage
                 password.Text = "";
                 App.ShowHome();
             }));
+            Body.Add(Ui.Action("Kích hoạt tài khoản từ lời mời", () => Open(new ActivateInvitationPage()), true));
         }
         catch (Exception error)
         {

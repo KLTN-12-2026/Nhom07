@@ -18,6 +18,9 @@ public sealed class HomePage() : DataPage("EzCondo", residentHeader: true)
                 Ui.Action("Xem công việc được giao", () => Open(new ComplaintsPage()))));
             Body.Add(Ui.Card(Ui.Section("Bảng công"), Ui.Text("Tra cứu ngày công và giờ làm thêm theo tháng"),
                 Ui.Action("Xem bảng công", () => Open(new ShiftsPage()), true)));
+            Body.Add(Ui.Action("Tra cứu bảng lương", () => Open(new PayrollPage()), true));
+            if (user.CanInviteResidents)
+                Body.Add(Ui.Action("Mời cư dân", () => Open(new InviteResidentPage()), true));
             return;
         }
 

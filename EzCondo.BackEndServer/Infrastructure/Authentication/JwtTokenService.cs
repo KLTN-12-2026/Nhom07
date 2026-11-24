@@ -17,7 +17,8 @@ namespace EzCondo.BackEndServer.Infrastructure.Authentication
 		public AccessTokenResult CreateAccessToken(
 			User user,
 			RoleScopeEnum scope,
-			IReadOnlyCollection<string> roleCodes)
+			IReadOnlyCollection<string> roleCodes,
+			Guid? mobileSessionId = null)
 		{
 			ArgumentNullException.ThrowIfNull(user);
 			ArgumentNullException.ThrowIfNull(roleCodes);
@@ -49,7 +50,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Authentication
 
 				new(
 					AppClaimTypes.JwtId,
-					Guid.NewGuid().ToString()),
+					(mobileSessionId ?? Guid.NewGuid()).ToString()),
 
 				new(
 					AppClaimTypes.Name,
@@ -90,7 +91,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Authentication
 
 			var token = new JwtSecurityToken(
 				issuer: _options.Issuer,
-				audience: _options.Audience,
+				audience: mobileSessionId.HasValue ? _options.Audience + ".mobile" : _options.Audience,
 				claims: claims,
 				notBefore: now.UtcDateTime,
 				expires: expiresAt.UtcDateTime,

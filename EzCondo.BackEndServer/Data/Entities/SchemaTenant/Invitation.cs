@@ -17,6 +17,7 @@ namespace EzCondo.BackEndServer.Data.Entities.SchemaTenant
 		public Guid RoleId { get; set; }
 		public Guid TenantId { get; set; }
 		public Guid? TargetUserId { get; set; }
+		public bool IsMobileResidentInvitation { get; set; }
 		public InvitationStatusEnum Status { get; set; } = InvitationStatusEnum.PendingDelivery;
 		public DateTimeOffset? EmailSentAt { get; set; }
 		public DateTimeOffset? LastEmailAttemptAt { get; set; }

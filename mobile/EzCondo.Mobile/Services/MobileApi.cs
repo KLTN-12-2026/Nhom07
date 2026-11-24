@@ -42,6 +42,13 @@ public sealed class MobileApi
         Account = session.Account;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.Token);
     }
+    public async Task SignOutCurrent()
+    {
+        try { await Send<JsonElement>(HttpMethod.Delete, "sessions/current", null, empty: true); }
+        catch (SessionExpiredException) { }
+        SignOut();
+    }
+
     public void SignOut()
     {
         Account = null;
@@ -72,14 +79,15 @@ public sealed class MobileApi
     public Task<T> Post<T>(string path, object body) => Send<T>(HttpMethod.Post, path, body);
     public async Task Patch(string path, object body) => _ = await Send<JsonElement>(HttpMethod.Patch, path, body, true);
 
-    private async Task<T> Send<T>(HttpMethod method, string path, object? body, bool empty = false)
+    private async Task<T> Send<T>(HttpMethod method, string path, object? body, bool empty = false, bool anonymous = false)
     {
         try
         {
-            using var request = new HttpRequestMessage(method, new Uri(new Uri(BaseUrl), "api/mobile/" + path));
+            var route = path.StartsWith("api/", StringComparison.Ordinal) ? path : "api/mobile/" + path;
+            using var request = new HttpRequestMessage(method, new Uri(new Uri(BaseUrl), route));
             if (body != null) request.Content = JsonContent.Create(body);
             using var response = await client.SendAsync(request);
-            if (response.StatusCode == HttpStatusCode.Unauthorized && path != "sessions")
+            if (response.StatusCode == HttpStatusCode.Unauthorized && path != "sessions" && !anonymous)
                 throw new SessionExpiredException();
             if (!response.IsSuccessStatusCode)
             {
@@ -88,6 +96,7 @@ public sealed class MobileApi
                 {
                     var error = await response.Content.ReadFromJsonAsync<JsonElement>();
                     if (error.TryGetProperty("message", out var text)) message = text.GetString() ?? message;
+                    else if (error.TryGetProperty("detail", out var detail)) message = detail.GetString() ?? message;
                 }
                 catch (JsonException) { }
                 throw new InvalidOperationException(message);
@@ -99,6 +108,21 @@ public sealed class MobileApi
         catch (HttpRequestException error) { throw new InvalidOperationException("Không kết nối được máy chủ. Kiểm tra API local và kết nối Android.", error); }
         // AndroidMessageHandler on .NET 9 uses WebException for transport failures.
         catch (WebException error) { throw new InvalidOperationException("Không kết nối được máy chủ. Kiểm tra API local và kết nối Android.", error); }
+    }
+
+    public Task<ActivatedInvitationDto> AcceptInvitation(string link, string password, string confirmPassword)
+    {
+        if (!Uri.TryCreate(link.Trim(), UriKind.Absolute, out var uri) || !uri.Fragment.StartsWith("#token=", StringComparison.Ordinal))
+            throw new InvalidOperationException("Hãy dán liên kết lời mời đầy đủ trong email.");
+        var token = uri.Fragment[7..];
+        if (token.Length != 43 || token.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('-' or '_')))
+            throw new InvalidOperationException("Liên kết lời mời không hợp lệ.");
+        var invitationOrigin = new Uri(EmulatorAddress(uri.AbsoluteUri)).GetLeftPart(UriPartial.Authority);
+        if (uri.UserInfo.Length != 0 || !string.Equals(invitationOrigin, new Uri(BaseUrl).GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Liên kết lời mời không thuộc máy chủ EzCondo đang kết nối.");
+
+        return Send<ActivatedInvitationDto>(HttpMethod.Post, "api/invitations/accept",
+            new ActivateInvitationDto(token, password, confirmPassword), anonymous: true);
     }
 }
 

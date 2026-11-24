@@ -29,7 +29,7 @@ The script restores its environment variables before returning, including on fai
 - Test emails: `resident@ezcondo.local`, `staff@ezcondo.local`.
 - Generated test password: `mobile/.local/test-accounts.json`. Do not commit or share this file.
 
-Login uses email/password checked through the backend's ASP.NET Identity user store. The old account picker and ID-only demo impersonation are not used by the shared backend. Tokens stay in app memory and expire; sign in again when prompted.
+Login uses the web backend's ASP.NET Identity checks, tenant login service and JWT issuer. Android tokens stay in app memory and have a separate audience. Signing out revokes only the current Android session. Other devices and web sessions keep their tokens. After updating from the previous Android token format, sign in again.
 
 ## Visual Studio 2022
 
@@ -57,10 +57,20 @@ Only the explicit **Mobile Local** backend launch profile loads `mobile/.local/s
 | Staff assigned complaints and resolution | received_by_staff and resolved_at |
 | Service catalogue and prices | tenant.services |
 | Staff monthly work records | tenant.staff_time_sheets |
+| Staff payroll lookup | published personal rows in tenant.payroll_details and tenant.payrolls |
+| Staff invites residents and residents set their first password | tenant.invitations, identity.users, tenant roles |
 
 The schema has no parcels, facility bookings, service-request registrations, complaint chat, complaint priority/category/deadline, vehicles, or shift rosters. Their navigation/actions are hidden rather than inventing records or changing the web schema. Staff can mark assigned complaints resolved; no unsupported intermediate states are written. A service catalogue is not a service-request history. Work records are not shift assignments.
 
-Resident queries use the live tenant and apartment ownership; staff queries are restricted to their own assignments/work records. Deleted/locked users, revoked roles and suspended/closed tenants are rechecked on each request. Draft invoices are not shown to residents. Existing controller routes, CORS configuration, entity mappings and migrations are unchanged.
+Resident queries use live tenant and apartment ownership. Staff queries return their own assignments, work records and published payroll details. The individual amount is base salary plus allowance minus deductions. The payroll batch total and payment account information are excluded. Account, role and tenant access are rechecked for mobile requests. Draft invoices are not shown to residents.
+
+## Resident invitations
+
+Staff with `tenant.residents.invite` can open **Mời cư dân** from Android home and enter the resident's name and email. The backend selects the staff member's tenant and the resident role. The email link expires after 48 hours and is single-use. The resident can open the link in a browser or paste it into **Kích hoạt tài khoản từ lời mời** on the Android sign-in page. Both paths use the existing invitation acceptance API to set the password. Apartment-linked records become visible when the account is associated with the apartment.
+
+Set `Invitations__MobileAcceptanceUrl` to `https://<public-api-host>/api/mobile/invitation-activation` and configure the shared `Email__Smtp__*` settings through deployment secrets. Use the same API origin in Android. For an isolated local email test, use a test mailbox and the local loopback activation URL. Mobile Local can start without SMTP. Sending invitations requires a working SMTP configuration. Passwords and raw invitation tokens are not returned to staff.
+
+The migration `AddMobileSessionsAndResidentInvitations` adds mobile session storage and allows one active Android invitation per resident email and tenant. The existing active-invitation constraint remains in effect for the web invitation flow. Review the migration against a staging copy before deploying the shared backend.
 
 ## Database isolation and setup
 
@@ -77,8 +87,8 @@ To later use the actual website database, configure its connection and JWT setti
 Run the demo on the Android emulator with the shared backend and the isolated local PostgreSQL database. Before each demo, confirm that the staff account has at least one assigned, unresolved sample complaint. The local launcher preserves existing data, so a complaint resolved in a previous demo stays resolved.
 
 - **Resident** signs in, views their profile, invoices, contracts, and service catalogue with prices, then submits a complaint and reopens it to check its status.
-- **Staff** signs in, views their profile and monthly work records, then opens the separately prepared sample complaint assigned to them and marks it resolved.
-- **API authorization** passes the shared-backend checks below. Residents can read records within their authorized scope, and requests for another apartment's or tenant's private records are denied. Staff can resolve complaints assigned to them, and requests to resolve complaints outside their assignments are denied.
+- **Staff** signs in, views their profile, work records and published personal payroll, then resolves the separately prepared assigned complaint. A staff account with invitation permission sends an invitation to a test mailbox. The new resident sets their password and signs in.
+- **API authorization** passes the shared-backend checks below. The checks cover tenant, apartment and payroll isolation, complaint assignment and a one-use invitation. Android logout revokes its token while web and other Android sessions stay valid.
 
 ## Checks
 

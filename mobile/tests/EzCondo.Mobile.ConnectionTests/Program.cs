@@ -98,6 +98,26 @@ foreach (var status in new[] { HttpStatusCode.BadRequest, HttpStatusCode.Interna
     Check(calls == 1, "Wrong backend is rejected without retry");
 }
 
+{
+    var calls = 0;
+    using var client = new HttpClient(new StubHandler(async request =>
+    {
+        calls++;
+        var body = await request.Content!.ReadFromJsonAsync<ActivateInvitationDto>();
+        Check(request.RequestUri?.AbsolutePath == "/api/invitations/accept" && body?.Token == new string('a', 43),
+            "activation submits only the token to the existing acceptance API");
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new ActivatedInvitationDto("resident@test.local")) };
+    }));
+    var api = new MobileApi(client);
+    api.Configure("https://ezcondo.test/");
+    var token = new string('a', 43);
+    await Fails<InvalidOperationException>(() => api.AcceptInvitation("https://other.test/api/mobile/invitation-activation#token=" + token,
+        "Example!2026test", "Example!2026test"));
+    Check(calls == 0, "activation never sends credentials to another configured origin");
+    await api.AcceptInvitation("https://ezcondo.test/api/mobile/invitation-activation#token=" + token,
+        "Example!2026test", "Example!2026test");
+}
+
 sealed class StubHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

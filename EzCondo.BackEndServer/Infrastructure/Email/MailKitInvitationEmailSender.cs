@@ -26,9 +26,11 @@ namespace EzCondo.BackEndServer.Infrastructure.Email
 
 			var roleDisplayName = GetRoleDisplayName(email.RecipientType);
 
-			var requiresMobileApp = RequiresMobileApp(email.RecipientType);
+			var requiresMobileApp = RequiresMobileApp(email.RecipientType) && email.AcceptanceUrl is null;
 
-			var acceptUrl = BuildAcceptUrl(email.RawToken);
+			var acceptUrl = email.AcceptanceUrl is { } url
+				? new UriBuilder(url) { Fragment = "token=" + Uri.EscapeDataString(email.RawToken) }.Uri.AbsoluteUri
+				: BuildAcceptUrl(email.RawToken);
 
 			var tokenExpiresAtVietNam = 
 				email.TokenExpiresAt.ToOffset(TimeSpan.FromHours(7));

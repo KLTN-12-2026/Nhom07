@@ -1,12 +1,18 @@
 namespace EzCondo.Mobile.Contracts;
 
-public record Account(string Id, string Name, string Role, string TenantName, string? ApartmentCode);
+public record Account(string Id, string Name, string Role, string TenantName, string? ApartmentCode, bool CanInviteResidents = false);
 public record SessionRequest(string AccountId);
 public record LoginRequest(string Email, string Password);
+public record ActivateInvitationDto(string Token, string Password, string ConfirmPassword);
+public record ActivatedInvitationDto(string Email);
+public record InviteResidentDto(string FullName, string Email);
+public record ResidentInvitationDto(Guid Id, DateTimeOffset ExpiresAt);
 public record ServerInfo(string Backend, string Database);
 public record ServiceCatalogDto(string Id, string Code, string Name, decimal Price);
 public record WorkRecordDto(string Month, decimal StandardDays, decimal PaidLeaveDays, decimal UnpaidLeaveDays,
     decimal OvertimeHours, string? Note);
+public record PayrollDto(string Title, DateTimeOffset? PublishedAt, decimal BaseSalary, decimal Allowance,
+    decimal Deduction, decimal NetAmount);
 public record SessionResponse(string Token, Account Account);
 public record Profile(Account Account, string Phone, string Email, string Address, string? Department,
     string? JobTitle, List<VehicleDto> Vehicles);

@@ -8,6 +8,7 @@
 		string TenantSlug,
 		InvitationRecipientType RecipientType,
 		string RawToken,
-		DateTimeOffset TokenExpiresAt
+		DateTimeOffset TokenExpiresAt,
+		Uri? AcceptanceUrl = null
 		);
 }
