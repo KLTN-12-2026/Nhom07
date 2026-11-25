@@ -18,6 +18,7 @@ using EzCondo.BackEndServer.Services.SubscriptionPlans;
 using EzCondo.BackEndServer.Services.SubscriptionRenewals;
 using EzCondo.BackEndServer.Services.TenantAdminInvitations;
 using EzCondo.BackEndServer.Services.Tenants;
+using EzCondo.BackEndServer.Mobile;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,13 @@ using EzCondo.BackEndServer.Services.Payments.PayOS;
 using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
+var mobileLocal = Environment.GetEnvironmentVariable("EZCONDO_MOBILE_LOCAL") == "1";
+if (mobileLocal)
+{
+	var local = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "../mobile/.local"));
+	builder.Configuration.AddJsonFile(Path.Combine(local, "shared-backend.json"), optional: false);
+	await MobileLocalDatabase.StartAsync(local);
+}
 
 // Add services to the container.
 
@@ -93,7 +101,7 @@ builder.Services
 	.ValidateOnStart();
 
 // Đăng ký cấu hình tích hợp PayOS
-builder.Services
+var payOSOptions = builder.Services
 	.AddOptions<PayOSIntegrationOptions>()
 	.Bind(
 		builder.Configuration.GetSection(
@@ -142,8 +150,8 @@ builder.Services
 		"PayOS:TimeoutSeconds phải từ 5 đến 60 giây.")
 	.Validate(
 		x => x.MaxRetries is >= 0 and <= 3,
-		"PayOS:MaxRetries phải từ 0 đến 3.")
-	.ValidateOnStart();
+		"PayOS:MaxRetries phải từ 0 đến 3.");
+if (!mobileLocal) payOSOptions.ValidateOnStart();
 
 
 // Đăng ký PayOS SDK client
@@ -208,7 +216,7 @@ builder.Services.AddScoped<
 var invitationExpiryEnabled = builder.Configuration.GetValue<bool>(
 	$"{InvitationExpiryOptions.SectionName}:Enabled");
 
-if (invitationExpiryEnabled)
+if (!mobileLocal && invitationExpiryEnabled)
 {
 	builder.Services.AddHostedService<
 		InvitationExpiryWorker>();
@@ -247,7 +255,7 @@ builder.Services.AddScoped<
 var lifecycleEnabled = builder.Configuration.GetValue<bool>(
 	$"{SubscriptionLifecycleOptions.SectionName}:Enabled");
 
-if (lifecycleEnabled)
+if (!mobileLocal && lifecycleEnabled)
 {
 	builder.Services.AddHostedService<SubscriptionLifecycleWorker>();
 }
@@ -261,7 +269,7 @@ builder.Services.AddScoped<
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
 //Đăng ký mailkit
-builder.Services
+var smtpOptions = builder.Services
 	.AddOptions<SmtpOptions>()
 	.Bind(
 		builder.Configuration
@@ -283,8 +291,8 @@ builder.Services
 		"Email:Smtp:FromAddress không được để trống.")
 	.Validate(
 		x => !string.IsNullOrWhiteSpace(x.FromName),
-		"Email:Smtp:FromName không được để trống.")
-	.ValidateOnStart();
+		"Email:Smtp:FromName không được để trống.");
+if (!mobileLocal) smtpOptions.ValidateOnStart();
 
 //Đăng ký invitation link options
 builder.Services
@@ -508,7 +516,7 @@ var renewalReminderEnabled =
 	builder.Configuration.GetValue<bool>(
 		$"{SubscriptionRenewalReminderOptions.SectionName}:Enabled");
 
-if (renewalReminderEnabled)
+if (!mobileLocal && renewalReminderEnabled)
 {
 	builder.Services.AddHostedService<
 		SubscriptionRenewalReminderWorker>();
@@ -529,6 +537,7 @@ builder.Services.AddScoped<
 
 
 builder.Services.AddControllers();
+builder.Services.AddMobileApi(builder.Configuration);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
@@ -578,18 +587,24 @@ await using (var scope = app.Services.CreateAsyncScope())
 	await initializer.InitializeAsync(
 		CancellationToken.None);
 
-	var payOSProviderAccountSeeder =
-		scope.ServiceProvider.GetRequiredService<
-			PlatformPayOSProviderAccountSeeder>();
+	if (!mobileLocal)
+	{
+		var payOSProviderAccountSeeder =
+			scope.ServiceProvider.GetRequiredService<
+				PlatformPayOSProviderAccountSeeder>();
 
-	await payOSProviderAccountSeeder.SeedAsync(
-		CancellationToken.None);
+		await payOSProviderAccountSeeder.SeedAsync(
+			CancellationToken.None);
+	}
 }
 
 //Gọi seeder
-await DataBaseSeeder.SeedPlatformAccountsAsync(
-	app.Services,
-	CancellationToken.None);
+if (!mobileLocal)
+{
+	await DataBaseSeeder.SeedPlatformAccountsAsync(
+		app.Services,
+		CancellationToken.None);
+}
 
 
 
@@ -613,6 +628,7 @@ app.UseCors(ReactCorsPolicy);
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

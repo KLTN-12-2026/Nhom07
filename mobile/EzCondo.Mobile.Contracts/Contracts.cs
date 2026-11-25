@@ -1,21 +1,32 @@
 namespace EzCondo.Mobile.Contracts;
 
-public record Account(string Id, string Name, string Role, string TenantName, string? ApartmentCode);
+public record Account(string Id, string Name, string Role, string TenantName, string? ApartmentCode, bool CanInviteResidents = false);
 public record SessionRequest(string AccountId);
+public record LoginRequest(string Email, string Password);
+public record ActivateInvitationDto(string Token, string Password, string ConfirmPassword);
+public record ActivatedInvitationDto(string Email);
+public record InviteResidentDto(string FullName, string Email);
+public record ResidentInvitationDto(Guid Id, DateTimeOffset ExpiresAt);
+public record ServerInfo(string Backend, string Database);
+public record ServiceCatalogDto(string Id, string Code, string Name, decimal Price);
+public record WorkRecordDto(string Month, decimal StandardDays, decimal PaidLeaveDays, decimal UnpaidLeaveDays,
+    decimal OvertimeHours, string? Note);
+public record PayrollDto(string Title, DateTimeOffset? PublishedAt, decimal BaseSalary, decimal Allowance,
+    decimal Deduction, decimal NetAmount);
 public record SessionResponse(string Token, Account Account);
 public record Profile(Account Account, string Phone, string Email, string Address, string? Department,
     string? JobTitle, List<VehicleDto> Vehicles);
 public record VehicleDto(string Type, string Plate);
-public record Overview(int OpenComplaints, int PendingParcels, long AmountDue, int ShiftCount);
-public record InvoiceDto(string Id, string Code, string Month, string DueDate, string Status, long Total,
+public record Overview(int OpenComplaints, int PendingParcels, decimal AmountDue, int ShiftCount);
+public record InvoiceDto(string Id, string Code, string Month, string DueDate, string Status, decimal Total,
     List<InvoiceLine> Items);
-public record InvoiceLine(string Description, double Quantity, string Unit, long UnitPrice, long Amount);
+public record InvoiceLine(string Description, double Quantity, string Unit, decimal UnitPrice, decimal Amount);
 public record ContractDto(string Number, string Type, string StartDate, string EndDate, string Status,
     long? MonthlyRent, long? Deposit);
 public record ParcelDto(string TrackingCode, string Courier, string ArrivedAt, string Status, string? Locker);
 public record ComplaintDto(string Id, string Code, string Title, string Description, string Category,
     string ApartmentCode, string Status, string Priority, string CreatedAt, string? AssignedTo, string? Deadline,
-    List<MessageDto> Messages);
+    List<MessageDto> Messages, List<string>? Images = null);
 public record MessageDto(string Id, string SenderName, string SenderRole, string Content, string Timestamp);
 public record CreateComplaint(string Title, string Category, string Priority, string Description);
 public record CreateMessage(string Content);

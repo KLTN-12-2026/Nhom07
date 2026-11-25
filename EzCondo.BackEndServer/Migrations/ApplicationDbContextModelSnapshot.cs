@@ -1516,6 +1516,29 @@ namespace EzCondo.BackEndServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.MobileSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("mobile_sessions", "security");
+                });
+
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Permission", b =>
                 {
                     b.Property<RoleScopeEnum>("Scope")
@@ -1950,6 +1973,12 @@ namespace EzCondo.BackEndServer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
 
+                    b.Property<bool>("IsMobileResidentInvitation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_mobile_resident_invitation");
+
                     b.Property<DateTimeOffset?>("LastEmailAttemptAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("last_email_attempt_at");
@@ -2002,7 +2031,12 @@ namespace EzCondo.BackEndServer.Migrations
                     b.HasIndex("TenantId", "RoleId")
                         .IsUnique()
                         .HasDatabaseName("ux_invitations_active_tenant_role")
-                        .HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false");
+                        .HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false AND is_mobile_resident_invitation = false");
+
+                    b.HasIndex("TenantId", "Email", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_invitations_active_mobile_resident")
+                        .HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false AND is_mobile_resident_invitation = true");
 
                     b.HasIndex("TenantId", "Email", "TokenHash")
                         .IsUnique();
@@ -3201,6 +3235,15 @@ namespace EzCondo.BackEndServer.Migrations
                         .WithMany()
                         .HasForeignKey("SuspensionRequestedByAdminId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.MobileSession", b =>
+                {
+                    b.HasOne("EzCondo.BackEndServer.Data.Entities.SchemaIdentity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EzCondo.BackEndServer.Data.Entities.SchemaSecurity.Role", b =>

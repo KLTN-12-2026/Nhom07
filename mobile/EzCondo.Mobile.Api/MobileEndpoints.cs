@@ -171,5 +171,5 @@ public static class MobileEndpoints
     private static IResult Bad(string message) => Results.BadRequest(new { message });
     private static ComplaintDto ToDto(Complaint c) => new(c.Id, c.TicketCode, c.Title, c.Description, c.Category,
         c.ApartmentCode, c.Status, c.Priority, c.CreatedAt, c.AssignedTo, c.Deadline,
-        c.Messages.OrderBy(m => m.Timestamp).ThenBy(m => m.Id).Select(m => new MessageDto(m.Id, m.SenderName, m.SenderRole, m.Content, m.Timestamp)).ToList());
+        c.Messages.OrderBy(m => m.Timestamp).ThenBy(m => m.Id).Select(m => new MessageDto(m.Id, m.SenderName, m.SenderRole, m.Content, m.Timestamp)).ToList(), c.Images);
 }

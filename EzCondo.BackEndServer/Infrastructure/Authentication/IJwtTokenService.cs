@@ -8,6 +8,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Authentication
 		AccessTokenResult CreateAccessToken(
 			User user,
 			RoleScopeEnum scope,
-			IReadOnlyCollection<string> roleCodes);
+			IReadOnlyCollection<string> roleCodes,
+			Guid? mobileSessionId = null);
 	}
 }

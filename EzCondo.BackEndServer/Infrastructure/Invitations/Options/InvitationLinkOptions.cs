@@ -5,5 +5,6 @@
 		public const string SectionName = "Invitations";
 		public string PortalBaseUrl { get; set; } = string.Empty;
 		public string AcceptPath { get; set; } = "/accept-invitation";
+		public string? MobileAcceptanceUrl { get; set; }
 	}
 }

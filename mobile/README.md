@@ -1,61 +1,115 @@
-# EzCondo Android local
+# EzCondo Android — shared backend
 
-## Scope and design
+The MAUI app now calls **EzCondo.BackEndServer** (ASP.NET Core 8 / EF Core / PostgreSQL). It no longer starts or calls EzCondo.Mobile.Api by default. The existing SQLite database and legacy API sources are retained, not migrated or deleted.
 
-Native .NET MAUI Android app for residents and staff. ASP.NET Core mobile API reuses `EZCondoDbContext` and entity classes from `EzCondo.Web/backend`. SQLite data starts as a consistent backup of `ezcondo.db`. The website API and database schema are retained.
+## Run on this computer
 
-The local build targets .NET 9 / MAUI 9.0.120 to match the installed SDK and existing web backend. Open `mobile/EzCondo.Mobile.slnx` in the installed Visual Studio 2022 (17.14) or open this repository in VS Code. Upgrade to a supported .NET/MAUI release before a production deployment.
+Install the .NET 9 SDK selected by the repository's `global.json` and the Android MAUI workload. The shared backend still targets .NET 8 and needs the ASP.NET Core 8 runtime.
 
-Build order: session and tenant isolation → resident read screens → complaints and messages → bookings and services → staff work and shifts → Android verification.
-
-Resident capabilities: home, invoices with line items, contracts, parcels, complaints with conversation, facility bookings, service requests, profile and vehicles. Staff capabilities: assigned complaints, validated status changes, conversation, personal shifts and profile. There is no payroll/timekeeping data in this SQLite database. PayOS and Gemini require credentials and their own verified integration before those actions can be enabled.
-
-UI contract: Vietnamese content, teal primary color, light neutral surfaces, native Android controls, 48dp touch targets, four persistent tabs, scrollable details, visible loading/error/empty states, retry and form validation. A single main action per form. Status must have text as well as color. Data and role come from the API.
-
-## Local authentication boundary
-
-The source `UserAccounts` table has no password or Identity linkage. This build explicitly offers **local demo sessions**, using protected bearer tokens with an eight-hour expiry and a fresh database membership check on every request. Demo account selection is available only in Development. The host refuses to start outside Development and binds to loopback. Use `adb reverse tcp:5275 tcp:5275` for emulator or USB device. This host is a local development app, and must be replaced with production Identity login before hosting externally.
-
-Legacy business tables lack TenantId and some assignments use display names. Access is restricted through unambiguous apartment codes within the signed-in tenant. Ambiguous apartment codes are denied. Staff assignments accept only an exact name or the existing `KTV ` prefix and require a unique staff name in the database. Resident private records additionally match the current account name. These constraints should become explicit foreign keys during a future database migration.
-
-## Commands
-
-From the repository root in PowerShell, run `./mobile/Start-Local.ps1`. It backs up the source SQLite database on first run into ignored `mobile/.local/mobile.db`, starts the API on `127.0.0.1:5275`, builds the APK, and installs/launches it on the selected Android device. An Android emulator or USB device must be available (`adb devices`). Re-running retains local edits. API logs are in `mobile/.local/`.
+From the repository root:
 
 ```powershell
-dotnet build mobile/EzCondo.Mobile.Api
-dotnet build mobile/EzCondo.Mobile -f net9.0-android
-node mobile/tests/api-smoke.mjs
+.\mobile\Start-Local.ps1
 ```
 
-The app defaults to `http://127.0.0.1:5275/` over adb reverse. The login screen allows an API URL for other local configurations. Cleartext HTTP is allowed only for localhost and the emulator host, for this local setup. See [Microsoft's local web service guidance](https://learn.microsoft.com/en-us/dotnet/maui/data-cloud/local-web-services).
+For only the backend:
 
-`node mobile/tests/api-smoke.mjs` owns port 5275 while it runs. Stop the local API first using the process ID in `mobile/.local/api.pid`. The test starts and stops its own API against a separate disposable SQLite backup. Never run it against a production host.
+```powershell
+.\mobile\Start-Local.ps1 -ApiOnly
+```
 
-## Acceptance and verification
+The script starts the isolated PostgreSQL cluster, builds/starts the shared backend, creates test data only if the database has no users, and optionally starts Android and installs the APK. It does not reset existing users or passwords.
 
-- Build API and signed Android debug APK with no errors.
-- Authenticate each supported role and reject unsigned, tampered and expired tokens.
-- Verify access isolation, private records, input validation and staff transitions using API smoke checks against a disposable copy.
-- Create and reload a complaint/message, booking and service request. Changes survive restart.
-- Install and launch on Android, inspect resident and staff screens, submit a form, check navigation and offline retry, inspect crash logs.
-- Preserve the source database during tests.
+The script restores its environment variables before returning, including on failure. The existing web backend profiles keep port 5158; the Mobile Local profile uses port 5275 so the two launch configurations do not compete for that port. The local seeder builds without rebuilding a backend executable that may already be locked by F5.
 
-Use existing C# naming and async EF methods. Shared wire contracts live in `EzCondo.Mobile.Contracts`. Native pages live in `EzCondo.Mobile/Pages`, HTTP session handling in `Services`. API endpoints live in `EzCondo.Mobile.Api`. No external runtime UI libraries are required.
+- API: `http://127.0.0.1:5275/api/mobile/server`
+- Android emulator: `http://10.0.2.2:5275/`
+- Physical Android over USB: `http://127.0.0.1:5275/`, with `adb reverse tcp:5275 tcp:5275`.
+- PostgreSQL: `127.0.0.1:55432`, database `ezcondo_mobile_local`.
+- Test emails: `resident@ezcondo.local`, `staff@ezcondo.local`.
+- Generated test password: `mobile/.local/test-accounts.json`. Do not commit or share this file.
 
-## Verification results
+Login uses the web backend's ASP.NET Identity checks, tenant login service and JWT issuer. Android tokens stay in app memory and have a separate audience. Signing out revokes only the current Android session. Other devices and web sessions keep their tokens. After updating from the previous Android token format, sign in again.
 
-Verified on 13 November 2026 with .NET SDK 9.0.320, MAUI 9.0.120 and the installed Pixel 7 Android API 35 x86_64 emulator.
+## Visual Studio 2022
 
-- API and Android debug APK builds succeeded with zero warnings and zero errors.
-- API smoke checks passed 46 HTTP assertions plus ownership, roles, tenant isolation, ambiguous apartment rejection, data persistence and SQLite integrity assertions.
-- Android resident login, invoices and invoice lines, complaint creation, message submission, facility booking and service request submission worked against the API.
-- Android staff login, assigned complaint detail, status update, shift schedule and profile worked against the API.
-- Stopped and restarted the API, then verified the Android-created complaint/message and staff status persisted. The existing app session could reconnect.
-- UI inspection found and fixed the post-creation complaint navigation. Network exception handling also covers the legacy WebException transport errors in the .NET 9 Android handler. The [Android handler source](https://github.com/dotnet/android/blob/main/src/Mono.Android/Xamarin.Android.Net/AndroidMessageHandler.cs) describes the legacy exception behavior and its later mapping to HttpRequestException.
-- Reinstalled the final APK, verified complaint creation opens its detail, launched with the API stopped and verified the Vietnamese network error, then restarted the API and successfully retried and logged in. The full `Start-Local.ps1 -DeviceId emulator-5554` entry point also built, installed and launched successfully.
-- Source `EzCondo.Web/backend/ezcondo.db` has no content change in Git. Device tests use `mobile/.local/mobile.db`; the isolated API test uses its own backup. Keys, database copies, logs and screenshots are ignored by Git.
+1. Open `mobile/EzCondo.Mobile.slnx`.
+2. Select the shared **New Profile** startup profile.
+3. Confirm EzCondo.BackEndServer uses **Mobile Local** and EzCondo.Mobile uses the installed Pixel 7 Android emulator.
+4. Press F5. Shift+F5 stops the debug session. PostgreSQL remains running for the next launch.
 
-The debug APK is `mobile/EzCondo.Mobile/bin/Debug/net9.0-android/vn.ezcondo.mobile-Signed.apk`. Screenshots and device inspection artifacts are in `mobile/.local/`. `node mobile/tests/android-ui.cjs snapshot` inspects the current Android screen and `shot <name>` saves a screenshot. It targets `emulator-5554` by default or the device in `ANDROID_SERIAL`.
+Only the explicit **Mobile Local** backend launch profile loads `mobile/.local/shared-backend.json` and starts the private PostgreSQL cluster automatically after a computer restart. The existing web http/https/IIS profiles keep their existing settings. Do not run a separate API on port 5275 while using multiple-startup F5.
 
-Physical devices, PayOS/Gemini, production Identity, eight-hour expiry by waiting in real time, and production deployment have not been verified. There is no background sync or push notification service in this local build.
+`Initialize-Postgres.ps1` can be rerun without recreating the database. To stop just the local PostgreSQL cluster:
+
+```powershell
+& .\mobile\.local\postgresql\pgsql\bin\pg_ctl.exe -D .\mobile\.local\postgresql\data -m fast -w stop
+```
+
+## What is supported
+
+| Mobile feature | Existing backend data |
+|---|---|
+| Resident/staff login and profile | identity.users, tenant user roles, platform.tenants |
+| Resident invoices and detail | tenant.invoices, invoice_details, apartments, services |
+| Resident contracts | tenant.contracts and apartments |
+| Resident complaint creation/tracking | tenant.complaints |
+| Staff assigned complaints and resolution | received_by_staff and resolved_at |
+| Service catalogue and prices | tenant.services |
+| Staff monthly work records | tenant.staff_time_sheets |
+| Staff payroll lookup | published personal rows in tenant.payroll_details and tenant.payrolls |
+| Staff invites residents and residents set their first password | tenant.invitations, identity.users, tenant roles |
+
+The schema has no parcels, facility bookings, service-request registrations, complaint chat, complaint priority/category/deadline, vehicles, or shift rosters. Their navigation/actions are hidden rather than inventing records or changing the web schema. Staff can mark assigned complaints resolved; no unsupported intermediate states are written. A service catalogue is not a service-request history. Work records are not shift assignments.
+
+Resident queries use live tenant and apartment ownership. Staff queries return their own assignments, work records and published payroll details. The individual amount is base salary plus allowance minus deductions. The payroll batch total and payment account information are excluded. Account, role and tenant access are rechecked for mobile requests. Draft invoices are not shown to residents.
+
+## Resident invitations
+
+Staff with `tenant.residents.invite` can open **Mời cư dân** from Android home and enter the resident's name and email. The backend selects the staff member's tenant and the resident role. The email link expires after 48 hours and is single-use. The resident can open the link in a browser or paste it into **Kích hoạt tài khoản từ lời mời** on the Android sign-in page. Both paths use the existing invitation acceptance API to set the password. Apartment-linked records become visible when the account is associated with the apartment.
+
+Set `Invitations__MobileAcceptanceUrl` to `https://<public-api-host>/api/mobile/invitation-activation` and configure the shared `Email__Smtp__*` settings through deployment secrets. Use the same API origin in Android. For an isolated local email test, use a test mailbox and the local loopback activation URL. Mobile Local can start without SMTP. Sending invitations requires a working SMTP configuration. Passwords and raw invitation tokens are not returned to staff.
+
+The migration `AddMobileSessionsAndResidentInvitations` adds mobile session storage and allows one active Android invitation per resident email and tenant. The existing active-invitation constraint remains in effect for the web invitation flow. Review the migration against a staging copy before deploying the shared backend.
+
+## Database isolation and setup
+
+The user explicitly requested a new local PostgreSQL test database. It uses the checked-in EzCondo.BackEndServer migrations, including its tenant integrity triggers. It is not a copy of a live website database, and does not import the old mobile SQLite data.
+
+PostgreSQL Windows binaries were downloaded from the official EDB binaries page: https://www.enterprisedb.com/download-postgresql-binaries . Runtime files are under `mobile/.local/postgresql/pgsql`. A new computer must extract the official Windows archive there, then run `Initialize-Postgres.ps1` and `Start-Local.ps1 -ApiOnly` before F5.
+
+Connection credentials, random local JWT key, database files and test account credentials are kept under ignored `mobile/.local`. Never point the local seeder at a website/production database. It rejects connections other than the isolated local database. Mobile Local starts without PayOS or SMTP credentials and skips the platform account and PayOS seeders and the invitation and subscription workers. Website profiles retain their existing configuration validation and startup behavior.
+
+To later use the actual website database, configure its connection and JWT settings through the existing backend configuration mechanism and use the corresponding backend URL in mobile. Do not use the Mobile Local profile for that connection. Review and back up that database before running the backend's pre-existing automatic migrations.
+
+## Android demo acceptance criteria
+
+Run the demo on the Android emulator with the shared backend and the isolated local PostgreSQL database. Before each demo, confirm that the staff account has at least one assigned, unresolved sample complaint. The local launcher preserves existing data, so a complaint resolved in a previous demo stays resolved.
+
+- **Resident** signs in, views their profile, invoices, contracts, and service catalogue with prices, then submits a complaint and reopens it to check its status.
+- **Staff** signs in, views their profile, work records and published personal payroll, then resolves the separately prepared assigned complaint. A staff account with invitation permission sends an invitation to a test mailbox. The new resident sets their password and signs in.
+- **API authorization** passes the shared-backend checks below. The checks cover tenant, apartment and payroll isolation, complaint assignment and a one-use invitation. Android logout revokes its token while web and other Android sessions stay valid.
+
+## Checks
+
+```powershell
+dotnet run --project mobile/tests/EzCondo.Mobile.ConnectionTests --no-launch-profile
+dotnet run --project mobile/tests/EzCondo.SharedBackend.Tests --no-launch-profile
+dotnet build mobile/EzCondo.Mobile -f net9.0-android
+dotnet build EzCondo.Portal
+```
+
+The shared-backend test harness runs real HTTP controllers with an isolated in-memory store by default. For PostgreSQL, set `EZCONDO_TEST_POSTGRES` to a connection for **127.0.0.1:55432/ezcondo_mobile_regression**. That mode recreates ONLY that disposable regression database and applies the checked-in migrations. It rejects other hosts, ports and database names. Never supply the website database connection.
+
+Startup readiness retries only transport failures for up to 30 seconds, plus an in-flight HTTP timeout of up to 12 seconds. HTTP errors are reported immediately; POST/PATCH actions are not replayed automatically.
+
+## Verified on 23 November 2026
+
+- Eleven client checks passed: transport/Android/timeout recovery, bounded offline retries, HTTP errors, no POST replay, invalid JSON, invalid login and rejecting the wrong backend.
+- Nineteen HTTP/security checks plus fixture checks passed with both the in-memory provider and real PostgreSQL in `ezcondo_mobile_regression`. These cover resident/tenant isolation, draft invoices, decimal amounts, assignment checks, disabled users, password lockout, login throttling and keeping mobile tokens out of web routes. Existing weather and subscription-plan APIs remained reachable.
+- Android APK and Portal builds succeeded with zero warnings/errors during verification. Existing web controller, model and migration files were unchanged. The original http/https/IIS launch profile values and default profile order were checked against Git and preserved.
+- Reproduced an API startup hang when PostgreSQL was initially stopped: the daemon inherited redirected pipes, so waiting for EOF never completed. A regression check failed with a timeout before the fix and passed afterward. The backend now waits for pg_ctl itself rather than daemon pipe closure.
+- Two successful F5 cold starts after the fix began with both API and PostgreSQL stopped; the final run used port 5275 and left web port 5158 free. The Android resident signed in and loaded invoices on that final run.
+- Android resident flows loaded home, invoices, contracts and service prices, then created a complaint and loaded it back. Staff signed in, loaded monthly work records and resolved an assigned complaint. The launcher reused the F5 API without rebuilding its locked executable and restored the caller's environment.
+
+Screenshots are under ignored `mobile/.local/shared-backend-*.png`, including `shared-backend-final-f5.png`. During the initial heavy build the emulator displayed a System UI nonresponse dialog; it continued after waiting. No Windows restart or complete manual website UI regression was performed. No live website database was supplied or modified; these results use the explicitly requested new local PostgreSQL database.

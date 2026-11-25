@@ -1,5 +1,7 @@
 <Solution>
-  <Project Path="EzCondo.Mobile/EzCondo.Mobile.csproj" />
-  <Project Path="EzCondo.Mobile.Api/EzCondo.Mobile.Api.csproj" />
+  <Project Path="EzCondo.Mobile/EzCondo.Mobile.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="../EzCondo.BackEndServer/EzCondo.BackEndServer.csproj" />
   <Project Path="EzCondo.Mobile.Contracts/EzCondo.Mobile.Contracts.csproj" />
 </Solution>

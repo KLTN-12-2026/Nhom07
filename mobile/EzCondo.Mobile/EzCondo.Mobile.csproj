@@ -16,9 +16,12 @@
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <ItemGroup>
-    <MauiIcon Include="Resources/AppIcon/appicon.svg" Color="#087F78" />
-    <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#087F78" BaseSize="128,128" />
+    <MauiIcon Include="Resources/AppIcon/appicon.svg" Color="#003E80" />
+    <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#003E80" BaseSize="128,128" />
     <MauiImage Include="Resources/Images/*.svg" BaseSize="24,24" />
+    <MauiFont Include="Resources/Fonts/*.ttf" />
+    <MauiFont Include="Resources/Fonts/*.otf" />
+    <MauiAsset Include="Resources/Fonts/*-*.txt" LogicalName="licenses/%(Filename)%(Extension)" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
     <ProjectReference Include="../EzCondo.Mobile.Contracts/EzCondo.Mobile.Contracts.csproj" />

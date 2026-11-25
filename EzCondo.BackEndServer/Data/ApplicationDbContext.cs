@@ -41,6 +41,7 @@ namespace EzCondo.BackEndServer.Data
 		public DbSet<UserRole> UserRoles => Set<UserRole>();
 		public DbSet<Service> Services => Set<Service>();
 		public DbSet<StaffTimeSheet> StaffTimeSheets => Set<StaffTimeSheet>();
+		public DbSet<MobileSession> MobileSessions => Set<MobileSession>();
 
 		protected override void OnModelCreating(ModelBuilder b)
 		{
@@ -49,6 +50,16 @@ namespace EzCondo.BackEndServer.Data
 			b.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims", "identity");
 			b.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins", "identity");
 			b.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens", "identity");
+			b.Entity<MobileSession>(session =>
+			{
+				session.ToTable("mobile_sessions", "security");
+				session.HasKey(x => x.Id);
+				session.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
+				session.Property(x => x.UserId).HasColumnName("user_id");
+				session.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+				session.HasIndex(x => x.ExpiresAt);
+				session.HasOne<User>().WithMany().HasForeignKey(x => x.UserId);
+			});
 
 			b.HasPostgresExtension("citext");
 

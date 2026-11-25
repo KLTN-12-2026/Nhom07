@@ -91,7 +91,8 @@ namespace EzCondo.BackEndServer.Services.Authentication
 
 		public async Task<TenantLoginResult> LoginTenantAsync(
 			TenantLoginRequest request,
-			CancellationToken cancellationToken = default)
+			CancellationToken cancellationToken = default,
+			Guid? mobileSessionId = null)
 		{
 			ArgumentNullException.ThrowIfNull(request);
 
@@ -173,7 +174,8 @@ namespace EzCondo.BackEndServer.Services.Authentication
 			var accessToken = jwtTokenService.CreateAccessToken(
 				user,
 				RoleScopeEnum.Tenant,
-				roleCodes);
+				roleCodes,
+				mobileSessionId);
 
 			return TenantLoginResult.Success(
 				new TenantLoginResponse(

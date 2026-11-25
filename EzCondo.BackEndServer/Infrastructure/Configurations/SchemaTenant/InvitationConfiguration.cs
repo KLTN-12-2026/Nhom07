@@ -48,6 +48,7 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 
 			b.Property(x => x.LastEmailErrorCode)
 				.HasMaxLength(100);
+			b.Property(x => x.IsMobileResidentInvitation).HasDefaultValue(false);
 
 			b.HasOne(x => x.Tenant)
 				.WithMany(x => x.Invitations)
@@ -83,7 +84,12 @@ namespace EzCondo.BackEndServer.Infrastructure.Configurations.SchemaTenant
 			.IsUnique()
 			.HasFilter(
 				"status IN ('pending_delivery', 'sent') " +
-				"AND is_deleted = false");
+				"AND is_deleted = false AND is_mobile_resident_invitation = false");
+
+			b.HasIndex(x => new { x.TenantId, x.Email, x.RoleId })
+				.HasDatabaseName("ux_invitations_active_mobile_resident")
+				.IsUnique()
+				.HasFilter("status IN ('pending_delivery', 'sent') AND is_deleted = false AND is_mobile_resident_invitation = true");
 
 			b.HasIndex(x => new { x.Status, x.ExpiresAt })
 				.HasDatabaseName("ix_invitations_expiring")

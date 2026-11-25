@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/mobile/">
+    <Project Path="mobile/EzCondo.Mobile.Contracts/EzCondo.Mobile.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/mobile/tools/">
+    <Project Path="mobile/tools/SeedLocal/SeedLocal.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="global.json" />
   </Folder>
