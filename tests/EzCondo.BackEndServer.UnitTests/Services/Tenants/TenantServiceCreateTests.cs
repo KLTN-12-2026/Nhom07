@@ -29,6 +29,7 @@ public class TenantServiceCreateTests
             null!,
             identity.Object,
             TimeProvider.System,
+            null!,
             null!);
     }
 
